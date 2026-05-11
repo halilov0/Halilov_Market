@@ -1,0 +1,90 @@
+:root {
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --primary: #1f2937;
+  --primary-hover: #111827;
+  --accent: #0d5c46;
+  --danger: #b91c1c;
+  --warning: #d97706;
+  --radius: 6px;
+  font-family: 'Segoe UI', 'Arial Hebrew', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.5rem 0.9rem;
+}
+button:hover { background: var(--primary-hover); }
+button:disabled { background: #9ca3af; cursor: not-allowed; }
+button.secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+button.secondary:hover { background: var(--bg); }
+button.danger {
+  background: var(--danger);
+}
+button.danger:hover { background: #991b1b; }
+
+input, textarea, select {
+  font: inherit;
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+th, td { padding: 0.6rem 0.8rem; text-align: start; border-block-end: 1px solid var(--border); }
+th { background: var(--bg); font-weight: 600; }
+tr:last-child td { border-block-end: none; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.error {
+  color: var(--danger);
+  background: #fee2e2;
+  padding: 0.5rem 0.8rem;
+  border-radius: var(--radius);
+  margin-block: 0.5rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge.pending { background: #fef3c7; color: #92400e; }
+.badge.paid { background: #d1fae5; color: #065f46; }
+.badge.fulfilled, .badge.shipped, .badge.delivered { background: #dbeafe; color: #1e40af; }
+.badge.cancelled, .badge.refunded { background: #fee2e2; color: #991b1b; }

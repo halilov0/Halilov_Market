@@ -1,0 +1,99 @@
+package com.halilov.market.order;
+
+import jakarta.persistence.*;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "orders")
+public class Order {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "order_number", nullable = false, unique = true)
+    private String orderNumber;
+
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderStatus status = OrderStatus.PENDING;
+
+    @Column(name = "subtotal_agorot", nullable = false)
+    private int subtotalAgorot;
+
+    @Column(name = "shipping_agorot", nullable = false)
+    private int shippingAgorot;
+
+    @Column(name = "vat_agorot", nullable = false)
+    private int vatAgorot;
+
+    @Column(name = "total_agorot", nullable = false)
+    private int totalAgorot;
+
+    @Column(name = "shipping_address_id")
+    private Long shippingAddressId;
+
+    @Column(name = "payment_ref")
+    private String paymentRef;
+
+    @Column(name = "invoice_number")
+    private String invoiceNumber;
+
+    @Column(name = "tracking_number")
+    private String trackingNumber;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt = Instant.now();
+
+    @Column(name = "paid_at")
+    private Instant paidAt;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<OrderItem> items = new ArrayList<>();
+
+    @PreUpdate
+    void onUpdate() { this.updatedAt = Instant.now(); }
+
+    public void addItem(OrderItem item) {
+        item.setOrder(this);
+        items.add(item);
+    }
+
+    public Long getId() { return id; }
+    public String getOrderNumber() { return orderNumber; }
+    public void setOrderNumber(String orderNumber) { this.orderNumber = orderNumber; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+    public OrderStatus getStatus() { return status; }
+    public void setStatus(OrderStatus status) { this.status = status; }
+    public int getSubtotalAgorot() { return subtotalAgorot; }
+    public void setSubtotalAgorot(int subtotalAgorot) { this.subtotalAgorot = subtotalAgorot; }
+    public int getShippingAgorot() { return shippingAgorot; }
+    public void setShippingAgorot(int shippingAgorot) { this.shippingAgorot = shippingAgorot; }
+    public int getVatAgorot() { return vatAgorot; }
+    public void setVatAgorot(int vatAgorot) { this.vatAgorot = vatAgorot; }
+    public int getTotalAgorot() { return totalAgorot; }
+    public void setTotalAgorot(int totalAgorot) { this.totalAgorot = totalAgorot; }
+    public Long getShippingAddressId() { return shippingAddressId; }
+    public void setShippingAddressId(Long shippingAddressId) { this.shippingAddressId = shippingAddressId; }
+    public String getPaymentRef() { return paymentRef; }
+    public void setPaymentRef(String paymentRef) { this.paymentRef = paymentRef; }
+    public String getInvoiceNumber() { return invoiceNumber; }
+    public void setInvoiceNumber(String invoiceNumber) { this.invoiceNumber = invoiceNumber; }
+    public String getTrackingNumber() { return trackingNumber; }
+    public void setTrackingNumber(String trackingNumber) { this.trackingNumber = trackingNumber; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public Instant getPaidAt() { return paidAt; }
+    public void setPaidAt(Instant paidAt) { this.paidAt = paidAt; }
+    public List<OrderItem> getItems() { return items; }
+}

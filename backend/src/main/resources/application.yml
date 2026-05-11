@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: halilov-market
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/halilov}
+    username: ${DB_USER:halilov}
+    password: ${DB_PASSWORD:halilov_dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc.time_zone: Asia/Jerusalem
+        format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-change-me-dev-only-change-me-32+chars-min}
+    expiration-minutes: 60
+
+logging:
+  level:
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
