@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { api, formatPrice, type Category, type Page, type Product } from '../api'
+import { useEffect, useMemo, useState } from 'react'
+import { api, type Category, type Page, type Product } from '../api'
+import { Hero } from '../components/Hero'
+import { ProductCard } from '../components/ProductCard'
+import { Footer } from '../components/Footer'
+import { Icon } from '../components/Icon'
+import { comingSoon } from '../components/Toast'
 
 export function CatalogPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -22,67 +26,109 @@ export function CatalogPage() {
       .finally(() => setLoading(false))
   }, [categoryId])
 
+  const categoryNameById = useMemo(() => {
+    const m = new Map<number, string>()
+    categories.forEach(c => m.set(c.id, c.nameHe))
+    return m
+  }, [categories])
+
   return (
-    <div className="container">
-      <h1 style={{ marginBlockStart: 0 }}>קטלוג מוצרים</h1>
+    <>
+      <div className="hm-page">
+        <Hero />
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBlock: '1rem' }}>
-        <button
-          className={categoryId === null ? '' : 'secondary'}
-          onClick={() => setCategoryId(null)}
-        >
-          הכול
-        </button>
-        {categories.map(c => (
+        <div className="hm-section-head">
+          <div>
+            <div className="label">קטלוג · 2026</div>
+            <h2 style={{ marginTop: 6 }}>נבחר השבוע</h2>
+          </div>
+          <div className="hm-meta">
+            {!loading && `מציג ${products.length} מוצרים · ממוין לפי חדש`}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 18 }}>
+          <div className="hm-chips" style={{ flex: 1 }}>
+            <button
+              className={`hm-chip ${categoryId === null ? 'active' : ''}`}
+              onClick={() => setCategoryId(null)}
+            >
+              הכול
+            </button>
+            {categories.map(c => (
+              <button
+                key={c.id}
+                className={`hm-chip ${categoryId === c.id ? 'active' : ''}`}
+                onClick={() => setCategoryId(c.id)}
+              >
+                {c.nameHe}
+              </button>
+            ))}
+          </div>
           <button
-            key={c.id}
-            className={categoryId === c.id ? '' : 'secondary'}
-            onClick={() => setCategoryId(c.id)}
-          >
-            {c.nameHe}
-          </button>
-        ))}
-      </div>
-
-      {error && <div className="error">{error}</div>}
-      {loading && <p>טוען…</p>}
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-          gap: '1rem',
-        }}
-      >
-        {products.map(p => (
-          <Link
-            key={p.id}
-            to={`/p/${p.slug}`}
+            onClick={() => comingSoon('מיון')}
             style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              padding: '1rem',
-              boxShadow: 'var(--shadow)',
-              color: 'inherit',
+              display: 'flex', alignItems: 'center', gap: 8,
+              border: '1px solid var(--line)', borderRadius: 'var(--r-pill)',
+              padding: '8px 14px', background: 'var(--card)', fontSize: 13,
             }}
           >
-            <div style={{ height: 140, background: '#f3f4f6', borderRadius: 'var(--radius)', marginBlockEnd: '0.75rem' }} />
-            <div style={{ fontWeight: 600, marginBlockEnd: '0.25rem' }}>{p.nameHe}</div>
-            <div style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBlockEnd: '0.5rem' }}>
-              {p.descriptionHe}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <strong style={{ color: 'var(--primary)' }}>{formatPrice(p.priceAgorot)}</strong>
-              <span style={{ color: p.stockQty > 0 ? 'var(--muted)' : 'var(--danger)', fontSize: '0.85rem' }}>
-                {p.stockQty > 0 ? `במלאי` : 'אזל'}
-              </span>
-            </div>
-          </Link>
-        ))}
-      </div>
+            <span style={{ color: 'var(--ink-3)' }}>מיון:</span>
+            <strong>חדש קודם</strong>
+            <Icon name="chev" size={14} />
+          </button>
+        </div>
 
-      {!loading && products.length === 0 && <p>אין מוצרים להצגה.</p>}
-    </div>
+        {error && <div className="hm-error" style={{ marginBottom: 14 }}>{error}</div>}
+        {loading && <p style={{ color: 'var(--ink-3)' }}>טוען…</p>}
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+          gap: 18,
+        }}>
+          {products.map(p => (
+            <ProductCard
+              key={p.id}
+              p={p}
+              categoryName={p.categoryId != null ? categoryNameById.get(p.categoryId) : undefined}
+            />
+          ))}
+        </div>
+
+        {!loading && products.length === 0 && (
+          <p style={{ marginTop: 24, color: 'var(--ink-3)' }}>אין מוצרים להצגה.</p>
+        )}
+
+        {/* trust strip */}
+        <div style={{
+          marginTop: 36, padding: '22px 28px',
+          background: 'var(--card)', border: '1px solid var(--line)',
+          borderRadius: 'var(--r-lg)',
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24,
+        }}>
+          {([
+            ['truck', 'משלוח באותו יום', 'הזמנה עד 11:00 — מגיע עד הערב.'],
+            ['leaf',  'איכות מובטחת',     'החזר מלא אם לא מרוצים מהמוצר.'],
+            ['secure','תשלום מוגן',       'Grow/Meshulam · PCI Compliant.'],
+          ] as const).map(([i, t, s]) => (
+            <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <div style={{
+                width: 42, height: 42, borderRadius: '50%',
+                background: 'var(--olive-soft)', color: 'var(--olive-2)',
+                display: 'grid', placeItems: 'center', flexShrink: 0,
+              }}>
+                <Icon name={i} size={20} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 2 }}>{t}</div>
+                <div className="hm-meta">{s}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <Footer />
+    </>
   )
 }

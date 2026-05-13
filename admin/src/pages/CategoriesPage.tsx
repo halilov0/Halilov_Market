@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, type Category, type CategoryUpsert } from '../api'
+import { Field } from '../components/Field'
+import { Icon } from '../components/Icon'
 
 const emptyDraft: CategoryUpsert = { slug: '', nameHe: '', parentId: null, sortOrder: 0 }
 
@@ -53,46 +55,67 @@ export function CategoriesPage() {
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBlockEnd: '1rem' }}>
-        <h1 style={{ margin: 0 }}>קטגוריות</h1>
-        {!creating && !editing && <button onClick={startCreate}>+ קטגוריה חדשה</button>}
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 18 }}>
+        <div>
+          <h1>קטגוריות</h1>
+          <div className="sub">{categories.length} קטגוריות</div>
+        </div>
+        {!creating && !editing && (
+          <button className="hm-btn hm-btn-primary" onClick={startCreate}>+ קטגוריה חדשה</button>
+        )}
       </div>
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className="hm-error" style={{ marginBottom: 14 }}>{error}</div>}
 
       {(creating || editing) && (
-        <form onSubmit={save} className="card" style={{ marginBlockEnd: '1rem', display: 'grid', gap: '0.5rem' }}>
-          <h3 style={{ marginBlockStart: 0 }}>{editing ? `עריכת ${editing.nameHe}` : 'קטגוריה חדשה'}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-            <label>Slug<input required value={draft.slug} onChange={e => setDraft({ ...draft, slug: e.target.value })} /></label>
-            <label>שם<input required value={draft.nameHe} onChange={e => setDraft({ ...draft, nameHe: e.target.value })} /></label>
-            <label>סדר<input type="number" min={0} value={draft.sortOrder}
-                            onChange={e => setDraft({ ...draft, sortOrder: Number(e.target.value) })} /></label>
+        <form onSubmit={save} className="adm-card" style={{ marginBottom: 14, display: 'grid', gap: 14 }}>
+          <h3 style={{ fontFamily: 'var(--serif)', fontSize: 18 }}>
+            {editing ? `עריכת ${editing.nameHe}` : 'קטגוריה חדשה'}
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12 }}>
+            <Field label="שם בעברית" required value={draft.nameHe} onChange={e => setDraft({ ...draft, nameHe: e.target.value })} />
+            <Field label="Slug" required mono value={draft.slug} onChange={e => setDraft({ ...draft, slug: e.target.value })} />
+            <Field label="סדר" type="number" min={0} mono value={draft.sortOrder}
+                   onChange={e => setDraft({ ...draft, sortOrder: Number(e.target.value) })} />
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button type="submit" disabled={busy}>{busy ? 'שומר…' : 'שמירה'}</button>
-            <button type="button" className="secondary" onClick={cancel}>ביטול</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="submit" className="hm-btn hm-btn-primary" disabled={busy}>
+              {busy ? 'שומר…' : 'שמירה'}
+            </button>
+            <button type="button" className="hm-btn hm-btn-quiet" onClick={cancel}>ביטול</button>
           </div>
         </form>
       )}
 
-      <table>
-        <thead><tr><th>סדר</th><th>שם</th><th>Slug</th><th></th></tr></thead>
+      <table className="adm-table">
+        <thead>
+          <tr>
+            <th style={{ width: 80 }}>סדר</th>
+            <th>שם</th>
+            <th>Slug</th>
+            <th style={{ width: 140 }}></th>
+          </tr>
+        </thead>
         <tbody>
           {categories.map(c => (
             <tr key={c.id}>
-              <td>{c.sortOrder}</td>
-              <td>{c.nameHe}</td>
-              <td>{c.slug}</td>
-              <td style={{ display: 'flex', gap: '0.35rem' }}>
-                <button className="secondary" onClick={() => startEdit(c)}>עריכה</button>
-                <button className="danger" onClick={() => remove(c)}>מחיקה</button>
+              <td className="num">{c.sortOrder}</td>
+              <td style={{ fontWeight: 500 }}>{c.nameHe}</td>
+              <td className="num" style={{ color: 'var(--ink-3)' }}>{c.slug}</td>
+              <td style={{ display: 'flex', gap: 6 }}>
+                <button className="hm-btn hm-btn-quiet" style={{ padding: '5px 12px', fontSize: 12 }} onClick={() => startEdit(c)}>עריכה</button>
+                <button className="hm-icon-btn" style={{ width: 28, height: 28 }} onClick={() => remove(c)} aria-label="מחיקה">
+                  <Icon name="trash" size={14} />
+                </button>
               </td>
             </tr>
           ))}
+          {categories.length === 0 && (
+            <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--ink-3)', padding: 30 }}>אין קטגוריות.</td></tr>
+          )}
         </tbody>
       </table>
-    </div>
+    </>
   )
 }

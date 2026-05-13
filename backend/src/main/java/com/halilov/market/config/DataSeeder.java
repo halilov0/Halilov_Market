@@ -7,6 +7,7 @@ import com.halilov.market.catalog.ProductRepository;
 import com.halilov.market.user.Role;
 import com.halilov.market.user.User;
 import com.halilov.market.user.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,14 +21,17 @@ class DataSeeder {
         UserRepository users,
         CategoryRepository categories,
         ProductRepository products,
-        PasswordEncoder encoder
+        PasswordEncoder encoder,
+        @Value("${app.init.admin.email:admin@halilov.local}") String initAdminEmail,
+        @Value("${app.init.admin.password:admin123!}") String initAdminPassword,
+        @Value("${app.init.admin.fullName:Admin}") String initAdminFullName
     ) {
         return args -> {
-            if (!users.existsByEmail("admin@halilov.local")) {
+            if (!users.existsByEmail(initAdminEmail)) {
                 User admin = new User();
-                admin.setEmail("admin@halilov.local");
-                admin.setPasswordHash(encoder.encode("admin123!"));
-                admin.setFullName("Admin");
+                admin.setEmail(initAdminEmail);
+                admin.setPasswordHash(encoder.encode(initAdminPassword));
+                admin.setFullName(initAdminFullName);
                 admin.setRole(Role.ADMIN);
                 users.save(admin);
             }

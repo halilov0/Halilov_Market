@@ -1,10 +1,20 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState, Fragment } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { api, formatPrice, type CreateOrderRequest, type OrderView } from '../api'
 import { useCart } from '../cart/cartStore'
 import { useAuth } from '../auth/authStore'
+import { Field } from '../components/Field'
+import { SummaryRow } from '../components/SummaryRow'
+import { Icon } from '../components/Icon'
+import { Footer } from '../components/Footer'
 
-const SHIPPING_AGOROT = 1990 // ₪19.90 flat — placeholder until Israel Post integration
+const SHIPPING_AGOROT = 1990
+
+const STEPS = [
+  ['1', 'משלוח'],
+  ['2', 'תשלום'],
+  ['3', 'אישור'],
+] as const
 
 export function CheckoutPage() {
   const { lines, subtotalAgorot, clear } = useCart()
@@ -23,9 +33,7 @@ export function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!user) {
-      nav(`/login?next=/checkout`)
-    }
+    if (!user) nav('/login?next=/checkout')
   }, [user, nav])
 
   useEffect(() => {
@@ -69,73 +77,132 @@ export function CheckoutPage() {
   }
 
   return (
-    <div className="container" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-      <div>
-        <h1>קופה — פרטי משלוח</h1>
-        <form onSubmit={onSubmit} style={{ display: 'grid', gap: '0.75rem' }}>
-          <label>שם מלא
-            <input required value={fullName} onChange={e => setFullName(e.target.value)} />
-          </label>
-          <label>טלפון
-            <input required value={phone} onChange={e => setPhone(e.target.value)} />
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.5rem' }}>
-            <label>רחוב
-              <input required value={street} onChange={e => setStreet(e.target.value)} />
-            </label>
-            <label>מספר
-              <input value={houseNo} onChange={e => setHouseNo(e.target.value)} />
-            </label>
-            <label>דירה
-              <input value={apartment} onChange={e => setApartment(e.target.value)} />
-            </label>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.5rem' }}>
-            <label>עיר
-              <input required value={city} onChange={e => setCity(e.target.value)} />
-            </label>
-            <label>מיקוד
-              <input value={postalCode} onChange={e => setPostalCode(e.target.value)} />
-            </label>
-          </div>
-          <label>הערות לשליח
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
-          </label>
-          {error && <div className="error">{error}</div>}
-          <button type="submit" disabled={submitting}>
-            {submitting ? 'יוצר הזמנה…' : 'אישור הזמנה'}
-          </button>
-          <p style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
-            תשלום אמיתי עם Grow יחובר בהמשך. כרגע ההזמנה נוצרת בסטטוס PENDING.
-          </p>
-        </form>
-      </div>
+    <>
+      <form onSubmit={onSubmit}>
+        <div className="hm-page" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 30 }}>
+          <div>
+            <div className="hm-crumb">
+              <Link to="/cart" style={{ color: 'var(--ink-3)' }}>סל</Link>
+              <span className="sep">›</span>
+              <span style={{ color: 'var(--ink)' }}>קופה</span>
+            </div>
 
-      <aside style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '1rem', height: 'fit-content' }}>
-        <h3 style={{ marginBlockStart: 0 }}>סיכום הזמנה</h3>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.4rem' }}>
-          {lines.map(l => (
-            <li key={l.productId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-              <span>{l.nameHe} × {l.quantity}</span>
-              <span>{formatPrice(l.priceAgorot * l.quantity)}</span>
-            </li>
-          ))}
-        </ul>
-        <hr style={{ marginBlock: '0.75rem', border: 'none', borderBlockStart: '1px solid var(--border)' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>סך ביניים</span><span>{formatPrice(subtotal)}</span>
+            {/* stepper */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '12px 0 22px' }}>
+              {STEPS.map(([n, t], i) => {
+                const state = i === 0 ? 'active' : ''
+                const dotBg = state === 'active' ? 'var(--ink)' : 'var(--card)'
+                const dotColor = state === 'active' ? 'var(--paper)' : 'var(--ink-3)'
+                return (
+                  <Fragment key={n}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 30, height: 30, borderRadius: '50%',
+                        background: dotBg, color: dotColor,
+                        border: state === 'active' ? 'none' : '1px solid var(--line)',
+                        display: 'grid', placeItems: 'center', fontWeight: 600, fontSize: 13,
+                      }}>{n}</div>
+                      <span style={{
+                        fontSize: 14,
+                        fontWeight: state === 'active' ? 600 : 400,
+                        color: state === 'active' ? 'var(--ink)' : 'var(--ink-3)',
+                      }}>{t}</span>
+                    </div>
+                    {n !== '3' && <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />}
+                  </Fragment>
+                )
+              })}
+            </div>
+
+            <h2 style={{ marginBottom: 18 }}>פרטי משלוח</h2>
+
+            <div style={{ display: 'grid', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label="שם מלא" required value={fullName} onChange={e => setFullName(e.target.value)} />
+                <Field label="טלפון" required mono value={phone} onChange={e => setPhone(e.target.value)} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12 }}>
+                <Field label="רחוב" required value={street} onChange={e => setStreet(e.target.value)} />
+                <Field label="מספר" value={houseNo} onChange={e => setHouseNo(e.target.value)} />
+                <Field label="דירה" value={apartment} onChange={e => setApartment(e.target.value)} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+                <Field label="עיר" required value={city} onChange={e => setCity(e.target.value)} />
+                <Field label="מיקוד" mono value={postalCode} onChange={e => setPostalCode(e.target.value)} />
+              </div>
+              <Field
+                label="הערות לשליח"
+                multiline
+                rows={2}
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+              />
+            </div>
+
+            <div style={{
+              marginTop: 18, padding: 14, background: 'var(--olive-soft)',
+              borderRadius: 'var(--r-md)', display: 'flex', gap: 10, alignItems: 'center',
+            }}>
+              <Icon name="truck" size={18} />
+              <div style={{ fontSize: 13.5 }}>
+                השליח יצור איתך קשר ~30 דקות לפני הגעה.
+              </div>
+            </div>
+
+            {error && <div className="hm-error" style={{ marginTop: 14 }}>{error}</div>}
+          </div>
+
+          <aside style={{
+            background: 'var(--card)', border: '1px solid var(--line)',
+            borderRadius: 'var(--r-lg)', padding: 22, height: 'fit-content',
+            position: 'sticky', top: 24,
+          }}>
+            <h3 style={{ marginBottom: 14 }}>סיכום</h3>
+            <div style={{ display: 'grid', gap: 10 }}>
+              {lines.map(l => (
+                <div key={l.productId} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <div style={{
+                    width: 46, height: 46, borderRadius: 'var(--r-sm)',
+                    background: 'var(--paper-2)', display: 'grid', placeItems: 'center',
+                    fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)',
+                    letterSpacing: '0.12em', textAlign: 'center', padding: 4,
+                  }}>
+                    {l.slug.slice(0, 8)}
+                  </div>
+                  <div style={{ flex: 1, fontSize: 13 }}>
+                    <div style={{ fontWeight: 500 }}>{l.nameHe}</div>
+                    <div className="hm-meta" style={{ fontSize: 11.5 }}>× {l.quantity}</div>
+                  </div>
+                  <div className="mono" style={{ fontSize: 13 }}>
+                    {formatPrice(l.priceAgorot * l.quantity)}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <hr className="hm-rule" />
+            <SummaryRow k="סך ביניים" v={formatPrice(subtotal)} />
+            <SummaryRow k="משלוח" v={formatPrice(SHIPPING_AGOROT)} />
+            <SummaryRow k='מע"מ (18%, כלול)' v={formatPrice(vat)} muted />
+            <hr className="hm-rule" />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 6 }}>
+              <span style={{ fontWeight: 600 }}>סך הכל</span>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 24, fontWeight: 600 }}>{formatPrice(total)}</span>
+            </div>
+            <button
+              type="submit"
+              className="hm-btn hm-btn-primary hm-btn-lg"
+              style={{ width: '100%', justifyContent: 'center', marginTop: 14 }}
+              disabled={submitting}
+            >
+              {submitting ? 'יוצר הזמנה…' : 'אישור הזמנה'}
+            </button>
+            <div className="hm-meta" style={{ marginTop: 10, textAlign: 'center', fontSize: 11.5 }}>
+              כרגע ההזמנה נשמרת כ-PENDING. Grow יחובר בהמשך.
+            </div>
+          </aside>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>משלוח</span><span>{formatPrice(SHIPPING_AGOROT)}</span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '0.85rem' }}>
-          <span>מתוכו מע"מ (18%)</span><span>{formatPrice(vat)}</span>
-        </div>
-        <hr style={{ marginBlock: '0.5rem', border: 'none', borderBlockStart: '1px solid var(--border)' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1.15rem' }}>
-          <span>סך הכל לתשלום</span><span>{formatPrice(total)}</span>
-        </div>
-      </aside>
-    </div>
+      </form>
+      <Footer />
+    </>
   )
 }

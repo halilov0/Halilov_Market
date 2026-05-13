@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>חלילוב מרקט — Redesign</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;600;700&family=Heebo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    html, body { margin: 0; padding: 0; background: #1a1612; font-family: "Heebo", system-ui, sans-serif; }
+    #root { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="components.jsx"></script>
+  <script type="text/babel" src="pages.jsx"></script>
+  <script type="text/babel" src="system-card.jsx"></script>
+  <script type="text/babel" src="admin.jsx"></script>
+
+  <script type="text/babel" data-presets="react">
+    const App = () => (
+      <DesignCanvas title="Halilov Market — redesign" initialZoom={0.55}>
+        <DCSection id="overview" title="System">
+          <DCArtboard id="system" label="Design system" width={1280} height={1100}>
+            <SystemCard />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="home" title="Shop pages">
+          <DCArtboard id="catalog" label="Catalog · home" width={1400} height={1900}>
+            <CatalogPage />
+          </DCArtboard>
+          <DCArtboard id="product" label="Product detail" width={1400} height={1100}>
+            <ProductPage />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="checkout" title="Cart → checkout → confirmation">
+          <DCArtboard id="cart" label="Cart" width={1400} height={1050}>
+            <CartPage />
+          </DCArtboard>
+          <DCArtboard id="checkoutP" label="Checkout" width={1400} height={1100}>
+            <CheckoutPage />
+          </DCArtboard>
+          <DCArtboard id="confirm" label="Order confirmation" width={1100} height={1300}>
+            <ConfirmationPage />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="auth" title="Account">
+          <DCArtboard id="login" label="Login · split brand" width={1400} height={900}>
+            <AuthPage />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="admin" title="Admin panel">
+          <DCArtboard id="adm-dash" label="Admin · dashboard" width={1500} height={1100}>
+            <AdminDashboard />
+          </DCArtboard>
+          <DCArtboard id="adm-orders" label="Admin · orders list" width={1500} height={1150}>
+            <AdminOrders />
+          </DCArtboard>
+          <DCArtboard id="adm-order" label="Admin · order detail" width={1500} height={1150}>
+            <AdminOrderDetail />
+          </DCArtboard>
+          <DCArtboard id="adm-prods" label="Admin · products list" width={1500} height={1050}>
+            <AdminProducts />
+          </DCArtboard>
+          <DCArtboard id="adm-edit" label="Admin · product edit" width={1500} height={1300}>
+            <AdminProductEdit />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
