@@ -28,6 +28,7 @@ dist/
 .env.local
 *.pem
 *.key
+ssh-key-*
 
 # OS
 .DS_Store

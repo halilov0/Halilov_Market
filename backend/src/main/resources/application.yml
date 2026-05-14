@@ -44,7 +44,14 @@ app:
       password: ${INIT_ADMIN_PASSWORD:admin123!}
       fullName: ${INIT_ADMIN_FULL_NAME:Admin}
   media:
+    storage: ${MEDIA_STORAGE:local}
     localDir: ${MEDIA_DIR:./media}
+    r2:
+      endpoint: ${R2_ENDPOINT:}
+      accessKeyId: ${R2_ACCESS_KEY_ID:}
+      secretAccessKey: ${R2_SECRET_ACCESS_KEY:}
+      bucket: ${R2_BUCKET:}
+      publicBaseUrl: ${R2_PUBLIC_BASE_URL:}
 
 logging:
   level:

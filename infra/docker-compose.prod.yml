@@ -38,7 +38,16 @@ services:
       INIT_ADMIN_EMAIL: ${INIT_ADMIN_EMAIL:?INIT_ADMIN_EMAIL must be set}
       INIT_ADMIN_PASSWORD: ${INIT_ADMIN_PASSWORD:?INIT_ADMIN_PASSWORD must be set}
       INIT_ADMIN_FULL_NAME: ${INIT_ADMIN_FULL_NAME:-Admin}
+      MEDIA_STORAGE: ${MEDIA_STORAGE:-local}
       MEDIA_DIR: /app/media
+      # Cap JVM heap so the backend coexists with Postgres + nginx on a 1GB VM.
+      # SerialGC keeps GC threads minimal on a single-OCPU machine.
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--Xms128m -Xmx320m -XX:+UseSerialGC -XX:MaxMetaspaceSize=160m}
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_PUBLIC_BASE_URL: ${R2_PUBLIC_BASE_URL:-}
       PORT: "8080"
       SPRING_PROFILES_ACTIVE: prod
     expose:
@@ -64,18 +73,57 @@ services:
     expose:
       - "80"
 
+  # Optional pg_dump → S3-compatible sidecar. Opt in with:
+  #   docker compose -f infra/docker-compose.prod.yml --profile backup up -d --build
+  backup:
+    profiles: ["backup"]
+    build:
+      context: ./backup
+    image: halilov/backup:latest
+    container_name: halilov-backup
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      TZ: Asia/Jerusalem
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:-halilov}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      PGDATABASE: ${POSTGRES_DB:-halilov}
+      BACKUP_CRON: ${BACKUP_CRON:-15 3 * * *}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      # Optional vars use empty default so compose parses cleanly when --profile
+      # backup is NOT active. backup.sh enforces required values at runtime.
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_PREFIX: ${BACKUP_S3_PREFIX:-halilov/postgres}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-auto}
+      AWS_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+
   edge:
     image: nginx:1.27-alpine
     container_name: halilov-edge
     restart: unless-stopped
+    # Wait for backend to actually accept connections before exposing :80,
+    # otherwise the first cold-start window returns 502 Bad Gateway.
     depends_on:
-      - backend
-      - shop
-      - admin
+      backend:
+        condition: service_healthy
+      shop:
+        condition: service_started
+      admin:
+        condition: service_started
     ports:
       - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Swap to nginx.tls.conf once Cloudflare Origin Cert is dropped into ./nginx/certs/.
+      # Default stays HTTP-only so the stack runs before you have a domain.
+      - ./nginx/${NGINX_CONF_FILE:-nginx.conf}:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
 
 volumes:
   pgdata:

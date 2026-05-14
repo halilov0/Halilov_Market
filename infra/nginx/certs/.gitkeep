@@ -1,0 +1,4 @@
+# Drop Cloudflare Origin Certificate files here on the production VM:
+#   origin.pem  — the certificate PEM Cloudflare generates
+#   origin.key  — the matching private key
+# Both are gitignored by *.pem / *.key in the repo root .gitignore.
