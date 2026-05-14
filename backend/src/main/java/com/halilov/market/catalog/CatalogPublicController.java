@@ -22,10 +22,11 @@ public class CatalogPublicController {
     @GetMapping("/api/products")
     public Page<CatalogDtos.ProductView> products(
         @RequestParam(required = false) Long categoryId,
+        @RequestParam(required = false) String q,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size
     ) {
-        return catalog.listPublic(categoryId, page, size);
+        return catalog.listPublic(categoryId, q, page, size);
     }
 
     @GetMapping("/api/products/{slug}")

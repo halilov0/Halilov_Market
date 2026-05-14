@@ -20,8 +20,8 @@ export function RegisterPage() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '100vh' }}>
-      <div style={{ padding: '56px 64px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+    <div className="hm-auth-split">
+      <div className="hm-auth-form" style={{ padding: '56px 64px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 36, fontFamily: 'var(--serif)', fontSize: 22 }}>
           <span style={{
             width: 32, height: 32, borderRadius: '50%',
@@ -68,7 +68,7 @@ export function RegisterPage() {
         </form>
       </div>
 
-      <div style={{
+      <div className="hm-auth-decor" style={{
         background: 'var(--olive)', color: 'var(--paper)',
         padding: '56px 64px', position: 'relative', overflow: 'hidden',
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',

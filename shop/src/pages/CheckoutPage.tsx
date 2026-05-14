@@ -79,7 +79,7 @@ export function CheckoutPage() {
   return (
     <>
       <form onSubmit={onSubmit}>
-        <div className="hm-page" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 30 }}>
+        <div className="hm-page hm-sidebar-layout">
           <div>
             <div className="hm-crumb">
               <Link to="/cart" style={{ color: 'var(--ink-3)' }}>סל</Link>
@@ -117,16 +117,16 @@ export function CheckoutPage() {
             <h2 style={{ marginBottom: 18 }}>פרטי משלוח</h2>
 
             <div style={{ display: 'grid', gap: 14 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="hm-checkout-row-2">
                 <Field label="שם מלא" required value={fullName} onChange={e => setFullName(e.target.value)} />
                 <Field label="טלפון" required mono value={phone} onChange={e => setPhone(e.target.value)} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12 }}>
+              <div className="hm-checkout-row-3">
                 <Field label="רחוב" required value={street} onChange={e => setStreet(e.target.value)} />
                 <Field label="מספר" value={houseNo} onChange={e => setHouseNo(e.target.value)} />
                 <Field label="דירה" value={apartment} onChange={e => setApartment(e.target.value)} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+              <div className="hm-checkout-row-21">
                 <Field label="עיר" required value={city} onChange={e => setCity(e.target.value)} />
                 <Field label="מיקוד" mono value={postalCode} onChange={e => setPostalCode(e.target.value)} />
               </div>

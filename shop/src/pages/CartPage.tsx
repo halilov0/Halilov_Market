@@ -42,7 +42,7 @@ export function CartPage() {
 
   return (
     <>
-      <div className="hm-page" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 30 }}>
+      <div className="hm-page hm-sidebar-layout">
         <div>
           <div className="hm-crumb">
             <Link to="/" style={{ color: 'var(--ink-3)' }}>קטלוג</Link>
@@ -56,10 +56,7 @@ export function CartPage() {
 
           <div style={{ display: 'grid', gap: 12, marginTop: 24 }}>
             {lines.map(line => (
-              <div key={line.productId} style={{
-                display: 'grid',
-                gridTemplateColumns: '80px 1fr auto auto',
-                gap: 18, alignItems: 'center',
+              <div key={line.productId} className="hm-cart-line" style={{
                 padding: 14, background: 'var(--card)',
                 border: '1px solid var(--line)', borderRadius: 'var(--r-lg)',
               }}>

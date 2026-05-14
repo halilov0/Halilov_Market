@@ -1,7 +1,7 @@
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/authStore'
 import { Icon } from './Icon'
-import { comingSoon } from './Toast'
 
 function useCrumb(): string {
   const loc = useLocation()
@@ -18,8 +18,18 @@ function useCrumb(): string {
 export function TopBar() {
   const { user, logout } = useAuth()
   const nav = useNavigate()
+  const [searchParams] = useSearchParams()
   const initial = user?.fullName?.[0] ?? 'א'
   const crumb = useCrumb()
+  const [query, setQuery] = useState(searchParams.get('q') ?? '')
+
+  useEffect(() => { setQuery(searchParams.get('q') ?? '') }, [searchParams])
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    const v = query.trim()
+    nav(v ? `/products?q=${encodeURIComponent(v)}` : '/products')
+  }
 
   return (
     <div className="adm-top">
@@ -27,15 +37,24 @@ export function TopBar() {
         <span>חלילוב</span><span style={{ opacity: .4 }}>›</span>
         <b>{crumb}</b>
       </div>
-      <div className="search" onClick={() => comingSoon('חיפוש')} style={{ cursor: 'pointer' }}>
-        <Icon name="search" size={14} />
-        <span>חפש הזמנה, מוצר, לקוח…</span>
-        <span className="mono" style={{
-          marginInlineStart: 'auto', fontSize: 10.5,
-          padding: '2px 6px', border: '1px solid var(--line)',
-          borderRadius: 4, color: 'var(--ink-3)',
-        }}>⌘K</span>
-      </div>
+      <form className="search" onSubmit={submitSearch} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button type="submit" aria-label="חפש" style={{
+          border: 'none', background: 'transparent', padding: 0,
+          color: 'var(--ink-3)', display: 'grid', placeItems: 'center', cursor: 'pointer',
+        }}>
+          <Icon name="search" size={14} />
+        </button>
+        <input
+          type="search"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="חפש מק״ט, שם מוצר…"
+          style={{
+            flex: 1, border: 'none', outline: 'none', background: 'transparent',
+            fontSize: 13, color: 'var(--ink)', minWidth: 0, fontFamily: 'inherit',
+          }}
+        />
+      </form>
       <a href="http://localhost/" target="_blank" rel="noreferrer" className="hm-btn hm-btn-quiet" style={{ padding: '8px 14px', fontSize: 12.5 }}>
         צפה בחנות
       </a>

@@ -36,3 +36,5 @@ Thumbs.db
 
 # Docker volumes (local pg data)
 infra/data/
+
+new items/

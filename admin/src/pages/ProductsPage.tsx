@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { api, formatPrice, type Category, type Product, type ProductUpsert } from '../api'
 import { Field } from '../components/Field'
 import { Icon } from '../components/Icon'
@@ -10,6 +11,8 @@ const emptyDraft: ProductUpsert = {
 }
 
 export function ProductsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const urlQuery = searchParams.get('q') ?? ''
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [editing, setEditing] = useState<Product | null>(null)
@@ -18,6 +21,26 @@ export function ProductsPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [query, setQuery] = useState(urlQuery)
+
+  useEffect(() => { setQuery(urlQuery) }, [urlQuery])
+
+  const filteredProducts = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return products
+    return products.filter(p =>
+      p.nameHe.toLowerCase().includes(q) ||
+      p.sku.toLowerCase().includes(q)
+    )
+  }, [products, query])
+
+  const updateQuery = (v: string) => {
+    setQuery(v)
+    const next = new URLSearchParams(searchParams)
+    if (v.trim()) next.set('q', v.trim())
+    else next.delete('q')
+    setSearchParams(next, { replace: true })
+  }
 
   function load() {
     setError(null)
@@ -228,15 +251,29 @@ export function ProductsPage() {
       {error && <div className="hm-error" style={{ marginBottom: 14 }}>{error}</div>}
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div onClick={() => comingSoon('חיפוש')} style={{
+        <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
           background: 'var(--card)', border: '1px solid var(--line)',
-          borderRadius: 'var(--r-pill)', padding: '8px 14px',
-          width: 280, color: 'var(--ink-3)', fontSize: 13, cursor: 'pointer',
+          borderRadius: 'var(--r-pill)', padding: '6px 14px',
+          width: 280, color: 'var(--ink-3)',
         }}>
           <Icon name="search" size={14} />
-          <span>חפש מק״ט, שם מוצר…</span>
+          <input
+            type="search"
+            value={query}
+            onChange={e => updateQuery(e.target.value)}
+            placeholder="חפש מק״ט, שם מוצר…"
+            style={{
+              flex: 1, border: 'none', outline: 'none', background: 'transparent',
+              fontSize: 13, color: 'var(--ink)', minWidth: 0, fontFamily: 'inherit',
+            }}
+          />
         </div>
+        {query.trim() && (
+          <span className="hm-meta" style={{ fontSize: 12 }}>
+            {filteredProducts.length} מתוך {products.length}
+          </span>
+        )}
       </div>
 
       <table className="adm-table">
@@ -253,7 +290,7 @@ export function ProductsPage() {
           </tr>
         </thead>
         <tbody>
-          {products.map(p => {
+          {filteredProducts.map(p => {
             const lowStock = p.stockQty < 10
             const outOfStock = p.stockQty <= 0
             return (
@@ -297,8 +334,10 @@ export function ProductsPage() {
               </tr>
             )
           })}
-          {products.length === 0 && (
-            <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--ink-3)', padding: 30 }}>אין מוצרים. לחצו "מוצר חדש".</td></tr>
+          {filteredProducts.length === 0 && (
+            <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--ink-3)', padding: 30 }}>
+              {query.trim() ? `אין תוצאות עבור "${query.trim()}".` : 'אין מוצרים. לחצו "מוצר חדש".'}
+            </td></tr>
           )}
         </tbody>
       </table>

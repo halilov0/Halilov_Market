@@ -2,7 +2,7 @@ import type { ReactElement } from 'react'
 
 type IconName =
   | 'search' | 'cart' | 'user' | 'heart' | 'plus' | 'minus' | 'chev'
-  | 'leaf' | 'arrow' | 'bag' | 'check' | 'truck' | 'secure' | 'pkg' | 'x'
+  | 'leaf' | 'arrow' | 'bag' | 'check' | 'truck' | 'secure' | 'pkg' | 'x' | 'menu'
 
 const PATHS: Record<IconName, ReactElement> = {
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" /></>,
@@ -20,6 +20,7 @@ const PATHS: Record<IconName, ReactElement> = {
   secure: <><path d="M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6z" /><path d="m9 12 2 2 4-5" /></>,
   pkg:    <><path d="M3 7 12 3l9 4-9 4z" /><path d="M3 7v10l9 4 9-4V7" /><path d="M12 11v10" /></>,
   x:      <><path d="M6 6l12 12M18 6 6 18" /></>,
+  menu:   <><path d="M4 6h16M4 12h16M4 18h16" /></>,
 }
 
 export function Icon({ name, size = 18, stroke = 1.6 }: { name: IconName; size?: number; stroke?: number }) {

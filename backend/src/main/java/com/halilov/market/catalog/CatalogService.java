@@ -26,11 +26,21 @@ public class CatalogService {
             .stream().map(CatalogDtos.CategoryView::from).toList();
     }
 
-    public Page<CatalogDtos.ProductView> listPublic(Long categoryId, int page, int size) {
+    public Page<CatalogDtos.ProductView> listPublic(Long categoryId, String q, int page, int size) {
         var pageable = PageRequest.of(page, Math.min(size, 100), Sort.by("createdAt").descending());
-        Page<Product> p = (categoryId == null)
-            ? products.findByActiveTrue(pageable)
-            : products.findByActiveTrueAndCategoryId(categoryId, pageable);
+        String trimmed = q == null ? null : q.trim();
+        boolean hasQuery = trimmed != null && !trimmed.isEmpty();
+
+        Page<Product> p;
+        if (hasQuery && categoryId != null) {
+            p = products.searchActiveByCategory(categoryId, trimmed, pageable);
+        } else if (hasQuery) {
+            p = products.searchActive(trimmed, pageable);
+        } else if (categoryId != null) {
+            p = products.findByActiveTrueAndCategoryId(categoryId, pageable);
+        } else {
+            p = products.findByActiveTrue(pageable);
+        }
         return p.map(CatalogDtos.ProductView::from);
     }
 

@@ -53,7 +53,7 @@ export function ProductPage() {
           <span style={{ color: 'var(--ink)' }}>{product.nameHe}</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 36 }}>
+        <div className="hm-product-detail">
           {/* gallery */}
           <div>
             <div style={{
@@ -181,7 +181,7 @@ export function ProductPage() {
               קנייה מהירה
             </button>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            <div className="hm-three-col" style={{ gap: 10 }}>
               {([
                 ['truck',  'משלוח חינם',    'מעל ₪150 · עד 2 ימי עסקים'],
                 ['leaf',   'איכות מובטחת', 'החזר מלא אם לא מרוצים'],

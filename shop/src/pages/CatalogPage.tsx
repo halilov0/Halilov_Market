@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { api, type Category, type Page, type Product } from '../api'
 import { Hero } from '../components/Hero'
 import { ProductCard } from '../components/ProductCard'
@@ -7,6 +8,8 @@ import { Icon } from '../components/Icon'
 import { comingSoon } from '../components/Toast'
 
 export function CatalogPage() {
+  const [searchParams] = useSearchParams()
+  const q = (searchParams.get('q') ?? '').trim()
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [categoryId, setCategoryId] = useState<number | null>(null)
@@ -19,12 +22,15 @@ export function CatalogPage() {
 
   useEffect(() => {
     setLoading(true)
-    const qs = categoryId ? `?categoryId=${categoryId}&size=50` : '?size=50'
-    api<Page<Product>>(`/api/products${qs}`)
+    const params = new URLSearchParams()
+    params.set('size', '50')
+    if (categoryId) params.set('categoryId', String(categoryId))
+    if (q) params.set('q', q)
+    api<Page<Product>>(`/api/products?${params.toString()}`)
       .then(p => setProducts(p.content))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }, [categoryId])
+  }, [categoryId, q])
 
   const categoryNameById = useMemo(() => {
     const m = new Map<number, string>()
@@ -35,15 +41,15 @@ export function CatalogPage() {
   return (
     <>
       <div className="hm-page">
-        <Hero />
+        {!q && <Hero />}
 
         <div className="hm-section-head">
           <div>
-            <div className="label">קטלוג · 2026</div>
-            <h2 style={{ marginTop: 6 }}>נבחר השבוע</h2>
+            <div className="label">{q ? 'תוצאות חיפוש' : 'קטלוג · 2026'}</div>
+            <h2 style={{ marginTop: 6 }}>{q ? `חיפוש: "${q}"` : 'נבחר השבוע'}</h2>
           </div>
           <div className="hm-meta">
-            {!loading && `מציג ${products.length} מוצרים · ממוין לפי חדש`}
+            {!loading && `מציג ${products.length} מוצרים${q ? '' : ' · ממוין לפי חדש'}`}
           </div>
         </div>
 
@@ -82,11 +88,7 @@ export function CatalogPage() {
         {error && <div className="hm-error" style={{ marginBottom: 14 }}>{error}</div>}
         {loading && <p style={{ color: 'var(--ink-3)' }}>טוען…</p>}
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-          gap: 18,
-        }}>
+        <div className="hm-catalog-grid">
           {products.map(p => (
             <ProductCard
               key={p.id}
@@ -101,11 +103,10 @@ export function CatalogPage() {
         )}
 
         {/* trust strip */}
-        <div style={{
+        <div className="hm-three-col" style={{
           marginTop: 36, padding: '22px 28px',
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 'var(--r-lg)',
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24,
         }}>
           {([
             ['truck', 'משלוח באותו יום', 'הזמנה עד 11:00 — מגיע עד הערב.'],

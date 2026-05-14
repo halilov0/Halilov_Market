@@ -45,6 +45,7 @@
 * { box-sizing: border-box; }
 
 html, body, #root { height: 100%; }
+html, body { overflow-x: hidden; max-width: 100%; }
 body {
   margin: 0;
   font-family: var(--sans);
@@ -448,6 +449,173 @@ select.hm-input { appearance: none; background-image: linear-gradient(45deg, tra
   color: var(--berry);
   border-radius: var(--r-md);
   font-size: 13.5px;
+}
+
+/* ---- responsive layout classes ----
+   Each class is "desktop default → single-column on mobile". Replaces inline
+   `gridTemplateColumns` so pages stack cleanly on phones. */
+.hm-sidebar-layout {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 30px;
+}
+.hm-product-detail {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 36px;
+}
+.hm-auth-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+.hm-three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.hm-checkout-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hm-checkout-row-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; }
+.hm-checkout-row-21 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+.hm-cart-line {
+  display: grid;
+  grid-template-columns: 80px 1fr auto auto;
+  gap: 16px;
+  align-items: center;
+}
+.hm-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+/* mobile menu toggle button + drawer — hidden on desktop */
+.hm-menu-toggle,
+.hm-mobile-drawer { display: none; }
+
+/* ---- MOBILE ---- */
+@media (max-width: 768px) {
+  h1 { font-size: 32px; }
+  h2 { font-size: 24px; }
+  h3 { font-size: 19px; }
+
+  /* header collapses to ONLY: hamburger + logo + cart. Everything else → drawer. */
+  .hm-header { padding: 10px 14px; gap: 10px; flex-wrap: wrap; }
+  .hm-logo { font-size: 19px; }
+  .hm-logo .mark { width: 28px; height: 28px; font-size: 14px; }
+  .hm-nav,
+  .hm-header-search,
+  .hm-mobile-hide { display: none !important; }
+  .hm-menu-toggle {
+    display: grid;
+    place-items: center;
+    width: 40px; height: 40px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+  }
+  .hm-header-actions {
+    margin-inline-start: auto;
+    gap: 6px;
+  }
+
+  /* drawer revealed when header has .open */
+  .hm-mobile-drawer {
+    flex-basis: 100%;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0 4px;
+    border-top: 1px solid var(--line);
+  }
+  .hm-header.open .hm-mobile-drawer { display: flex; }
+  .hm-mobile-drawer a {
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--line);
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  .hm-mobile-drawer a:last-child { border-bottom: none; }
+  .hm-mobile-search {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--r-pill); padding: 10px 14px;
+    color: var(--ink-3); font-size: 14px;
+    width: 100%;
+  }
+
+  /* hero stacks */
+  .hm-hero {
+    grid-template-columns: 1fr;
+    padding: 28px 22px;
+    gap: 22px;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .hm-hero > * { min-width: 0; max-width: 100%; }
+  .hm-hero h1 { font-size: 34px; }
+  .hm-hero .art { max-width: 280px; margin-inline: auto; }
+  .hm-hero .stamp { top: 14px; inset-inline-end: 16px; }
+  .hm-hero .cta-row { flex-wrap: wrap; }
+
+  /* pages */
+  .hm-page { padding: 16px 14px 28px; }
+  .hm-page-narrow { padding: 18px 14px 28px; }
+
+  /* sidebar layouts (cart, checkout) → stack */
+  .hm-sidebar-layout,
+  .hm-product-detail,
+  .hm-three-col,
+  .hm-checkout-row-2,
+  .hm-checkout-row-3,
+  .hm-checkout-row-21 {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* auth split: hide decorative side, just show the form */
+  .hm-auth-split { grid-template-columns: 1fr; }
+  .hm-auth-split .hm-auth-decor { display: none; }
+  .hm-auth-form { padding: 32px 20px !important; }
+
+  /* cart line: tighter, image smaller */
+  .hm-cart-line {
+    grid-template-columns: 60px 1fr;
+    grid-template-areas: "img name" "img sub" "qty price";
+    row-gap: 6px;
+  }
+
+  /* product card spacing */
+  .hm-product { padding: 12px; }
+  .hm-product .name { font-size: 16px; }
+  .hm-product .price { font-size: 16px; }
+
+  /* catalog grid: 2 compact cards per row on phones */
+  .hm-catalog-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  /* footer: stack */
+  .hm-footer {
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 16px;
+    text-align: center;
+  }
+  .hm-footer .links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+
+  /* chips/filters can scroll horizontally */
+  .hm-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .hm-chips::-webkit-scrollbar { display: none; }
+
+  /* slightly tighter inputs */
+  .hm-input { font-size: 16px; /* prevents iOS zoom on focus */ }
+
+  /* toast positioning fix for RTL */
+  .hm-toast-wrap { inset-inline-start: 16px; inset-inline-end: 16px; transform: none; align-items: center; }
 }
 
 /* ---- toast (coming-soon stub) ---- */
