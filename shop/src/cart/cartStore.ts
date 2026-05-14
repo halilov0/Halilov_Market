@@ -9,6 +9,7 @@ export type CartLine = {
   nameHe: string
   priceAgorot: number
   quantity: number
+  imageUrl: string | null
 }
 
 type CartState = {
@@ -26,7 +27,15 @@ function load(): CartLine[] {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    return parsed.map((l: Partial<CartLine>) => ({
+      productId: l.productId!,
+      slug: l.slug!,
+      nameHe: l.nameHe!,
+      priceAgorot: l.priceAgorot!,
+      quantity: l.quantity!,
+      imageUrl: l.imageUrl ?? null,
+    }))
   } catch {
     return []
   }
@@ -51,6 +60,7 @@ export const useCart = create<CartState>((set, get) => ({
         nameHe: p.nameHe,
         priceAgorot: p.priceAgorot,
         quantity: Math.min(99, quantity),
+        imageUrl: p.imageUrl,
       })
     }
     save(lines)

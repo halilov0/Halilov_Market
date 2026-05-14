@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom'
 import { api, formatPrice, type OrderView } from '../api'
 import { Icon } from '../components/Icon'
 import { Footer } from '../components/Footer'
-import { SummaryRow } from '../components/SummaryRow'
 import { useAuth } from '../auth/authStore'
 import { comingSoon } from '../components/Toast'
 
@@ -20,121 +19,126 @@ export function OrderConfirmationPage() {
       .catch(e => setError(e.message))
   }, [orderNumber])
 
-  if (error) return <div className="hm-page"><div className="hm-error">{error}</div></div>
-  if (!order) return <div className="hm-page"><p style={{ color: 'var(--ink-3)' }}>טוען…</p></div>
+  if (error) return <div className="cls-page"><div className="hm-error">{error}</div></div>
+  if (!order) return <div className="cls-page"><p style={{ color: 'var(--ink-3)' }}>טוען…</p></div>
 
   const greetingName = user?.fullName?.split(' ')[0] ?? ''
   const statusLower = order.status.toLowerCase()
 
   return (
     <>
-      <div className="hm-page-narrow">
-        <div style={{ textAlign: 'center', marginBottom: 30 }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: '50%',
-            background: 'var(--olive-soft)', color: 'var(--olive-2)',
-            display: 'grid', placeItems: 'center', margin: '0 auto 18px',
-          }}>
-            <Icon name="check" size={32} stroke={2.4} />
-          </div>
-          <div className="hm-meta" style={{
-            fontFamily: 'var(--mono)', letterSpacing: '0.18em',
-            color: 'var(--terracotta)', textTransform: 'uppercase',
-          }}>הזמנה התקבלה</div>
-          <h1 style={{ fontSize: 42, marginTop: 10 }}>תודה{greetingName ? `, ${greetingName}` : ''} ✿</h1>
-          <p style={{ color: 'var(--ink-2)', marginTop: 8 }}>
-            הזמנה <span className="mono" style={{ color: 'var(--ink)' }}>#{order.orderNumber}</span>
+      <div className="cls-page-narrow">
+        <div className="cls-confirm-hero">
+          <div className="check"><Icon name="check" size={32} stroke={2.6} /></div>
+          <div className="eyebrow">הזמנה התקבלה</div>
+          <h1>תודה{greetingName ? `, ${greetingName}` : ''}!</h1>
+          <p>
+            הזמנה <span className="mono" style={{ color: 'var(--ink)', fontWeight: 700 }}>#{order.orderNumber}</span>
             {user && <> · נשלח אישור אל {user.email}</>}
           </p>
         </div>
 
-        <div className="hm-card">
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            paddingBottom: 16, borderBottom: '1px solid var(--line)',
-          }}>
+        <div className="cls-confirm-card">
+          <div className="head">
             <div>
               <h3>סטטוס הזמנה</h3>
-              <div style={{ color: 'var(--ink-2)', marginTop: 4 }}>
+              <div className="when">
                 נוצר ב-{new Date(order.createdAt).toLocaleString('he-IL', {
                   day: '2-digit', month: '2-digit', year: 'numeric',
                   hour: '2-digit', minute: '2-digit',
                 })}
               </div>
             </div>
-            <span className={`hm-status hm-status-${statusLower}`}>{order.status}</span>
+            <span className={`cls-confirm-status ${statusLower}`}>{order.status}</span>
           </div>
 
-          <div style={{ display: 'grid', gap: 14, marginTop: 18 }}>
+          <div style={{ display: 'grid', gap: 12, marginTop: 18 }}>
             {order.items.map(it => (
-              <div key={it.productId} style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                <div style={{
-                  width: 54, height: 54, borderRadius: 'var(--r-md)',
-                  background: 'var(--paper-2)', display: 'grid', placeItems: 'center',
-                  fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)',
-                  letterSpacing: '0.14em', textAlign: 'center', padding: 4,
-                }}>
-                  {it.sku}
+              <div key={it.productId} className="cls-mini-line">
+                <div className="thumb">
+                  <span className="ph">{it.sku}</span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 17 }}>{it.nameHe}</div>
-                  <div className="hm-meta">× {it.quantity}</div>
+                <div className="info">
+                  <div className="n">{it.nameHe}</div>
+                  <div className="q">× {it.quantity} · {formatPrice(it.unitPriceAgorot)} ליחידה</div>
                 </div>
-                <div className="mono" style={{ fontWeight: 600 }}>
-                  {formatPrice(it.lineTotalAgorot)}
-                </div>
+                <div className="v">{formatPrice(it.lineTotalAgorot)}</div>
               </div>
             ))}
           </div>
 
-          <hr className="hm-rule" />
-          <SummaryRow k="סך ביניים" v={formatPrice(order.subtotalAgorot)} />
-          <SummaryRow k="משלוח" v={formatPrice(order.shippingAgorot)} />
-          <SummaryRow k='מע"מ (18%, כלול)' v={formatPrice(order.vatAgorot)} muted />
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', marginTop: 10,
-            paddingTop: 10, borderTop: '1px solid var(--line)',
-          }}>
-            <strong>סך הכל</strong>
-            <strong className="mono" style={{ fontSize: 22 }}>{formatPrice(order.totalAgorot)}</strong>
+          <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '14px 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13.5 }}>
+            <span>סך ביניים</span>
+            <span className="mono" style={{ fontWeight: 700 }}>{formatPrice(order.subtotalAgorot)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13.5 }}>
+            <span>משלוח</span>
+            <span className="mono" style={{ fontWeight: 700 }}>{formatPrice(order.shippingAgorot)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 12.5, color: 'var(--ink-3)' }}>
+            <span>מע"מ (18%, כלול)</span>
+            <span className="mono" style={{ fontWeight: 600 }}>{formatPrice(order.vatAgorot)}</span>
+          </div>
+          <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '10px 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 6 }}>
+            <strong style={{ fontSize: 15 }}>סך הכל</strong>
+            <strong className="mono" style={{ fontSize: 24, fontWeight: 800 }}>{formatPrice(order.totalAgorot)}</strong>
           </div>
         </div>
 
         {order.shipping && (
-          <div style={{
-            marginTop: 18, padding: 20, borderRadius: 'var(--r-lg)',
-            background: 'var(--card)', border: '1px solid var(--line)',
-            display: 'flex', gap: 16, alignItems: 'flex-start',
-          }}>
-            <div style={{
-              width: 42, height: 42, borderRadius: '50%',
-              background: 'var(--terra-soft)', color: 'var(--terracotta)',
-              display: 'grid', placeItems: 'center', flexShrink: 0,
-            }}>
-              <Icon name="truck" size={20} />
-            </div>
+          <div className="cls-ship-card">
+            <div className="ico-circle"><Icon name="truck" size={20} /></div>
             <div style={{ flex: 1 }}>
               <h4 style={{ marginBottom: 4 }}>כתובת למשלוח</h4>
-              <div className="hm-meta" style={{ lineHeight: 1.6 }}>
+              <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
                 {order.shipping.fullName} · <span className="mono">{order.shipping.phone}</span><br />
                 רחוב {order.shipping.street} {order.shipping.houseNo}
                 {order.shipping.apartment && `, דירה ${order.shipping.apartment}`}<br />
                 {order.shipping.city}
                 {order.shipping.postalCode && ` · ${order.shipping.postalCode}`}
                 {order.shipping.notes && (
-                  <><br /><em>"{order.shipping.notes}"</em></>
+                  <><br /><em style={{ color: 'var(--ink-3)' }}>"{order.shipping.notes}"</em></>
                 )}
               </div>
             </div>
-            <button className="hm-btn hm-btn-ghost" onClick={() => comingSoon('מעקב משלוח')}>
+            <button
+              onClick={() => comingSoon('מעקב משלוח')}
+              style={{
+                background: '#fff', border: '1px solid var(--line-2)',
+                borderRadius: 'var(--r-md)', padding: '9px 16px',
+                fontWeight: 700, fontSize: 12.5, cursor: 'pointer',
+                color: 'var(--ink)',
+              }}
+            >
               עקוב
             </button>
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'center' }}>
-          <Link to="/" className="hm-btn hm-btn-primary">המשך קניות</Link>
-          <button className="hm-btn hm-btn-quiet" onClick={() => comingSoon('חשבונית')}>
+        <div style={{ display: 'flex', gap: 10, marginTop: 28, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link
+            to="/"
+            style={{
+              background: 'var(--ink)', color: '#fff',
+              borderRadius: 'var(--r-md)', padding: '12px 24px',
+              fontWeight: 700, fontSize: 14,
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+            }}
+          >
+            המשך קניות
+            <Icon name="arrow" size={14} stroke={2.2} />
+          </Link>
+          <button
+            onClick={() => comingSoon('חשבונית')}
+            style={{
+              background: '#fff', color: 'var(--ink)',
+              border: '1px solid var(--line-2)',
+              borderRadius: 'var(--r-md)', padding: '12px 24px',
+              fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            }}
+          >
             הורד חשבונית
           </button>
         </div>

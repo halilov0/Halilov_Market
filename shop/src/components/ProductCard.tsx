@@ -25,43 +25,40 @@ export function ProductCard({ p, categoryName }: { p: Product; categoryName?: st
   }
 
   return (
-    <Link to={`/p/${p.slug}`} className="hm-product">
-      <div className="img">
+    <Link to={`/p/${p.slug}`} className="cls-card">
+      <div className="img-wrap">
         {p.imageUrl ? (
           <img src={p.imageUrl} alt={p.nameHe} loading="lazy" />
         ) : (
-          <span className="glyph">{p.sku}</span>
+          <span className="ph">{p.sku}</span>
         )}
         <div className="badge-stack">
-          {outOfStock && <span className="hm-badge hm-badge-out">אזל</span>}
-          {!outOfStock && lowStock && <span className="hm-badge hm-badge-sale">מלאי אחרון</span>}
+          {outOfStock && <span className="badge-pill out">אזל</span>}
+          {!outOfStock && lowStock && <span className="badge-pill dark">מלאי אחרון</span>}
         </div>
         <button
+          className="fav"
           onClick={onFavorite}
           aria-label="הוסף למועדפים"
-          style={{
-            position: 'absolute', top: 14, insetInlineEnd: 14,
-            width: 32, height: 32, borderRadius: '50%',
-            background: 'var(--card)', border: '1px solid var(--line)',
-            display: 'grid', placeItems: 'center', color: 'var(--ink-2)',
-          }}
         >
           <Icon name="heart" size={14} />
         </button>
       </div>
-      <div>
-        <div className="name">{p.nameHe}</div>
-        {p.descriptionHe && <div className="sub">{p.descriptionHe}</div>}
+      <div className="name">{p.nameHe}</div>
+      {categoryName && <div className="unit">{categoryName}</div>}
+      <div className="delivery-tag">
+        <Icon name="truck" size={12} stroke={2} />
+        משלוח מהיר
       </div>
-      {categoryName && <div className="cat-tag">{categoryName}</div>}
-      <div className="row">
+      <div className="price-row">
         <div className="price">
-          <span style={{ color: 'var(--ink-3)', fontSize: 12, marginInlineEnd: 2 }}>₪</span>
+          <span className="sym">₪</span>
           {shekels}
           <span className="agorot">.{agorot}</span>
         </div>
         <button className="add" onClick={onAdd} disabled={outOfStock} aria-label="הוסף לסל">
-          <Icon name="plus" size={16} stroke={2.2} />
+          <Icon name="plus" size={14} stroke={2.2} />
+          הוסף
         </button>
       </div>
     </Link>

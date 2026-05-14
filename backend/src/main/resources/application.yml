@@ -43,6 +43,8 @@ app:
       email: ${INIT_ADMIN_EMAIL:admin@halilov.local}
       password: ${INIT_ADMIN_PASSWORD:admin123!}
       fullName: ${INIT_ADMIN_FULL_NAME:Admin}
+  payment:
+    provider: ${PAYMENT_PROVIDER:mock}
   media:
     storage: ${MEDIA_STORAGE:local}
     localDir: ${MEDIA_DIR:./media}

@@ -9,6 +9,7 @@ import { RegisterPage } from './pages/RegisterPage'
 import { CartPage } from './pages/CartPage'
 import { CheckoutPage } from './pages/CheckoutPage'
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage'
+import { MockPaymentPage } from './pages/MockPaymentPage'
 import { useAuth } from './auth/authStore'
 
 function App() {
@@ -20,7 +21,10 @@ function App() {
   }, [fetchMe])
 
   // Auth pages render their own split layout (no global header)
-  const hideHeader = loc.pathname === '/login' || loc.pathname === '/register'
+  // Mock payment page mimics an external gateway, so we hide our chrome too.
+  const hideHeader = loc.pathname === '/login'
+    || loc.pathname === '/register'
+    || loc.pathname.startsWith('/payment/')
 
   return (
     <>
@@ -33,6 +37,7 @@ function App() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders/:orderNumber" element={<OrderConfirmationPage />} />
+        <Route path="/payment/mock" element={<MockPaymentPage />} />
         <Route path="*" element={<div className="hm-page"><h1>404</h1></div>} />
       </Routes>
       <ToastHost />

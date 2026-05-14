@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/authStore'
 import { Field } from '../components/Field'
+import { Icon } from '../components/Icon'
 
 export function RegisterPage() {
   const [email, setEmail] = useState('')
@@ -20,27 +21,21 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="hm-auth-split">
-      <div className="hm-auth-form" style={{ padding: '56px 64px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 36, fontFamily: 'var(--serif)', fontSize: 22 }}>
-          <span style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: 'var(--olive)', color: 'var(--paper)',
-            display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 16, fontFamily: 'var(--sans)',
-          }}>ח</span>
+    <div className="cls-auth-split">
+      <div className="cls-auth-form">
+        <Link to="/" className="brand-link">
+          <span className="mark">ח</span>
           <span>חלילוב מרקט</span>
         </Link>
 
-        <div className="hm-meta" style={{
-          fontFamily: 'var(--mono)', letterSpacing: '0.18em',
-          color: 'var(--terracotta)', textTransform: 'uppercase',
-        }}>הצטרפו אלינו</div>
-        <h1 style={{ fontSize: 54, marginTop: 10 }}>פתיחת חשבון.</h1>
-        <p style={{ color: 'var(--ink-2)', marginTop: 14, lineHeight: 1.6, maxWidth: '42ch' }}>
-          רישום מהיר. שמרו פרטי משלוח, עקבו אחרי הזמנות, וקבלו עדכונים על מבצעים.
+        <div className="eyebrow">הצטרפו אלינו</div>
+        <h1>פתיחת חשבון.</h1>
+        <p className="lede">
+          רישום מהיר. שמרו פרטי משלוח, עקבו אחרי הזמנות,
+          וקבלו עדכונים על מבצעים חמים.
         </p>
 
-        <form onSubmit={onSubmit} style={{ maxWidth: 420, marginTop: 30, display: 'grid', gap: 14 }}>
+        <form onSubmit={onSubmit}>
           <Field label="שם מלא" required value={fullName} onChange={e => setFullName(e.target.value)} />
           <Field label="אימייל" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
           <Field label="טלפון (לא חובה)" mono value={phone} onChange={e => setPhone(e.target.value)} />
@@ -54,44 +49,37 @@ export function RegisterPage() {
             onChange={e => setPassword(e.target.value)}
           />
           {error && <div className="hm-error">{error}</div>}
-          <button
-            type="submit"
-            className="hm-btn hm-btn-primary hm-btn-lg"
-            style={{ justifyContent: 'center' }}
-            disabled={loading}
-          >
+          <button type="submit" className="submit-cta" disabled={loading}>
             {loading ? 'נרשם…' : 'יצירת חשבון'}
+            {!loading && <Icon name="arrow" size={14} stroke={2.2} />}
           </button>
-          <p className="hm-meta" style={{ textAlign: 'center', marginTop: 6 }}>
-            כבר רשום? <Link to="/login" style={{ color: 'var(--terracotta)', textDecoration: 'underline' }}>התחברות</Link>
+          <p className="switch-line">
+            כבר רשום? <Link to="/login">התחברות</Link>
           </p>
         </form>
       </div>
 
-      <div className="hm-auth-decor" style={{
-        background: 'var(--olive)', color: 'var(--paper)',
-        padding: '56px 64px', position: 'relative', overflow: 'hidden',
-        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-      }}>
-        <div style={{
-          position: 'absolute', inset: 0, opacity: .35,
-          background: `radial-gradient(circle at 25% 35%, oklch(0.7 0.12 85) 0 22%, transparent 23%),
-                       radial-gradient(circle at 75% 70%, oklch(0.6 0.13 40) 0 16%, transparent 17%),
-                       radial-gradient(circle at 35% 80%, oklch(0.55 0.13 25) 0 12%, transparent 13%)`,
-          filter: 'blur(2px)',
-        }} />
-        <div style={{ position: 'relative' }}>
-          <div className="hm-meta" style={{
-            fontFamily: 'var(--mono)', color: 'oklch(0.82 0.04 85)',
-            letterSpacing: '0.18em', textTransform: 'uppercase',
-          }}>למה חלילוב</div>
-          <div style={{
-            fontFamily: 'var(--serif)', fontSize: 42, lineHeight: 1.1,
-            marginTop: 14, color: 'var(--paper)',
-          }}>
-            "סופר ישראלי אמיתי. מחירים הוגנים, משלוח מהיר."
+      <div className="cls-auth-decor">
+        <div className="inner">
+          <div className="eyebrow">למה חלילוב</div>
+          <div className="quote">
+            "המרקט הישראלי<br />שעובד בשבילך."
           </div>
-          <div style={{ marginTop: 18, fontSize: 14, opacity: .85 }}>— צוות חלילוב</div>
+          <div className="who">— צוות חלילוב</div>
+          <div className="features">
+            <div className="feat">
+              <span className="ico"><Icon name="bolt" size={14} /></span>
+              <span>10% הנחה בהזמנה הראשונה.</span>
+            </div>
+            <div className="feat">
+              <span className="ico"><Icon name="truck" size={14} /></span>
+              <span>משלוח לכל הארץ עד 22:00.</span>
+            </div>
+            <div className="feat">
+              <span className="ico"><Icon name="phone" size={14} /></span>
+              <span>שירות לקוחות 24/7 · *6500.</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import type { ReactElement } from 'react'
 type IconName =
   | 'search' | 'cart' | 'user' | 'heart' | 'plus' | 'minus' | 'chev'
   | 'leaf' | 'arrow' | 'bag' | 'check' | 'truck' | 'secure' | 'pkg' | 'x' | 'menu'
+  | 'pin' | 'phone' | 'bolt' | 'grid' | 'chev-d'
 
 const PATHS: Record<IconName, ReactElement> = {
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" /></>,
@@ -21,6 +22,11 @@ const PATHS: Record<IconName, ReactElement> = {
   pkg:    <><path d="M3 7 12 3l9 4-9 4z" /><path d="M3 7v10l9 4 9-4V7" /><path d="M12 11v10" /></>,
   x:      <><path d="M6 6l12 12M18 6 6 18" /></>,
   menu:   <><path d="M4 6h16M4 12h16M4 18h16" /></>,
+  pin:    <><path d="M12 21s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12z" /><circle cx="12" cy="9" r="2.5" /></>,
+  phone:  <><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /></>,
+  bolt:   <><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></>,
+  grid:   <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></>,
+  'chev-d': <><path d="m6 9 6 6 6-6" /></>,
 }
 
 export function Icon({ name, size = 18, stroke = 1.6 }: { name: IconName; size?: number; stroke?: number }) {

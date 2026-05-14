@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/authStore'
 import { useCart } from '../cart/cartStore'
+import { api, type Category } from '../api'
 import { Icon } from './Icon'
 import { comingSoon } from './Toast'
 
@@ -15,10 +16,15 @@ export function Header() {
   const onCatalog = loc.pathname === '/'
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState(searchParams.get('q') ?? '')
+  const [categories, setCategories] = useState<Category[]>([])
+  const [selectedDept, setSelectedDept] = useState<string>('all')
   const close = () => setOpen(false)
 
-  // keep input synced when URL changes (e.g. user navigates back)
   useEffect(() => { setQuery(searchParams.get('q') ?? '') }, [searchParams])
+
+  useEffect(() => {
+    api<Category[]>('/api/categories').then(setCategories).catch(() => {})
+  }, [])
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,128 +33,182 @@ export function Header() {
     nav(v ? `/?q=${encodeURIComponent(v)}` : '/')
   }
 
-  const initial = user?.fullName?.[0] ?? '·'
+  const greeting = user ? `שלום, ${user.fullName.split(' ')[0]}` : 'שלום, אורח'
 
   return (
-    <header className={`hm-header${open ? ' open' : ''}`}>
-      <Link to="/" className="hm-logo" onClick={close}>
-        <span className="mark">ח</span>
-        <span>חלילוב מרקט</span>
-      </Link>
-      <nav className="hm-nav">
-        <Link to="/" className={onCatalog ? 'active' : ''}>קטלוג</Link>
-        <a onClick={() => comingSoon('טריות השבוע')}>טריות השבוע</a>
-        <a onClick={() => comingSoon('מבצעים')}>מבצעים</a>
-        <a onClick={() => comingSoon('חדש בקטלוג')}>חדש בקטלוג</a>
-        <a onClick={() => comingSoon('עלינו')}>עלינו</a>
-      </nav>
-      <div className="hm-header-actions">
-        <form
-          className="hm-header-search"
-          onSubmit={submitSearch}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: 'var(--card)', border: '1px solid var(--line)',
-            borderRadius: 'var(--r-pill)', padding: '6px 14px',
-            width: 260,
-          }}
-        >
-          <button type="submit" aria-label="חפש" style={{
-            border: 'none', background: 'transparent', color: 'var(--ink-3)',
-            padding: 0, display: 'grid', placeItems: 'center', cursor: 'pointer',
-          }}>
-            <Icon name="search" size={16} />
-          </button>
-          <input
-            type="search"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="חפש מוצר…"
-            style={{
-              flex: 1, border: 'none', outline: 'none', background: 'transparent',
-              fontSize: 14, color: 'var(--ink)', minWidth: 0, fontFamily: 'inherit',
-            }}
-          />
-        </form>
-        <button className="hm-icon-btn hm-mobile-hide" onClick={() => comingSoon('מועדפים')} title="מועדפים">
-          <Icon name="heart" />
-        </button>
-        <Link to="/cart" className="hm-icon-btn" title="סל" onClick={close}>
-          <Icon name="bag" />
-          {totalItems > 0 && <span className="badge">{totalItems}</span>}
-        </Link>
-        {user ? (
-          <div className="hm-mobile-hide" style={{ display: 'flex', alignItems: 'center', gap: 10, marginInlineStart: 8 }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: '50%',
-              background: 'var(--terra-soft)', color: 'var(--terracotta)',
-              display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 14,
-            }}>{initial}</div>
-            <div style={{ lineHeight: 1.15 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>שלום, {user.fullName}</div>
-              <a onClick={() => { logout(); nav('/') }} style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                התנתקות
-              </a>
-            </div>
+    <>
+      <div className="cls-util-bar">
+        <div className="cls-util-inner">
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Icon name="pin" size={12} />
+            משלוח לכל הארץ
+          </span>
+          <span className="sep" />
+          <a onClick={() => comingSoon('שירות לקוחות')}>שירות לקוחות 24/7</a>
+          <span className="sep" />
+          <a onClick={() => comingSoon('מעקב הזמנה')}>מעקב הזמנה</a>
+          <span className="sep" />
+          <a onClick={() => comingSoon('חנויות מורשות')}>חנויות מורשות</a>
+          <div className="util-end">
+            <a onClick={() => comingSoon('שירות טלפוני')}>
+              <Icon name="phone" size={12} />
+              *6500
+            </a>
+            <span className="sep" />
+            <a onClick={() => comingSoon('English')}>EN</a>
+            <span className="sep" />
+            <a>ILS ₪</a>
           </div>
-        ) : (
-          <>
-            <Link to="/login" className="hm-btn hm-btn-quiet hm-mobile-hide" onClick={close}>התחברות</Link>
-            <Link to="/register" className="hm-btn hm-btn-primary hm-mobile-hide" onClick={close}>הרשמה</Link>
-          </>
-        )}
+        </div>
       </div>
-      <button
-        className="hm-menu-toggle"
-        aria-label={open ? 'סגור תפריט' : 'פתח תפריט'}
-        onClick={() => setOpen(o => !o)}
-      >
-        <Icon name={open ? 'x' : 'menu'} />
-      </button>
 
-      <div className="hm-mobile-drawer">
-        <form className="hm-mobile-search" onSubmit={submitSearch}>
-          <button type="submit" aria-label="חפש" style={{
-            border: 'none', background: 'transparent', color: 'var(--ink-3)',
-            padding: 0, display: 'grid', placeItems: 'center',
-          }}>
-            <Icon name="search" size={16} />
-          </button>
-          <input
-            type="search"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="חפש מוצר…"
-            style={{
-              flex: 1, border: 'none', outline: 'none', background: 'transparent',
-              fontSize: 16, color: 'var(--ink)', minWidth: 0, fontFamily: 'inherit',
-            }}
-          />
-        </form>
-        <Link to="/" onClick={close}>קטלוג</Link>
-        <a onClick={() => { comingSoon('טריות השבוע'); close() }}>טריות השבוע</a>
-        <a onClick={() => { comingSoon('מבצעים'); close() }}>מבצעים</a>
-        <a onClick={() => { comingSoon('חדש בקטלוג'); close() }}>חדש בקטלוג</a>
-        <a onClick={() => { comingSoon('עלינו'); close() }}>עלינו</a>
-        <a onClick={() => { comingSoon('מועדפים'); close() }}>מועדפים</a>
-        {user ? (
-          <>
-            <span style={{ padding: '12px 4px', fontSize: 13, color: 'var(--ink-3)' }}>
-              שלום, {user.fullName}
+      <header className={`cls-header${open ? ' open' : ''}`}>
+        <div className="cls-header-inner">
+          <Link to="/" className="cls-logo" onClick={close}>
+            <span className="mark">ח</span>
+            <span>
+              חלילוב מרקט
+              <span className="sub">כל מה שצריך · במקום אחד</span>
             </span>
-            <a onClick={() => { logout(); nav('/'); close() }} style={{ color: 'var(--terracotta)' }}>
+          </Link>
+
+          <form className="cls-search" onSubmit={submitSearch}>
+            <select
+              value={selectedDept}
+              onChange={e => setSelectedDept(e.target.value)}
+              aria-label="מחלקה"
+            >
+              <option value="all">כל המחלקות</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.slug}>{c.nameHe}</option>
+              ))}
+            </select>
+            <input
+              type="search"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="חיפוש מוצר, מותג או מק״ט…"
+            />
+            <button type="submit" className="go">
+              <Icon name="search" size={16} stroke={2.2} />
+              <span className="go-label">חיפוש</span>
+            </button>
+          </form>
+
+          <div className="cls-header-actions">
+            {user ? (
+              <button
+                className="cls-icon-btn"
+                type="button"
+                onClick={() => { logout(); nav('/') }}
+                title="התנתקות"
+              >
+                <Icon name="user" size={20} />
+                <span className="label">
+                  <span className="top">{greeting}</span>
+                  <span className="bot">התנתקות</span>
+                </span>
+              </button>
+            ) : (
+              <Link to="/login" className="cls-icon-btn" onClick={close} title="התחברות">
+                <Icon name="user" size={20} />
+                <span className="label">
+                  <span className="top">{greeting}</span>
+                  <span className="bot">התחברות</span>
+                </span>
+              </Link>
+            )}
+            <a className="cls-icon-btn" onClick={() => comingSoon('מועדפים')} title="מועדפים">
+              <Icon name="heart" size={20} />
+              <span className="label">
+                <span className="top">רשימת</span>
+                <span className="bot">מועדפים</span>
+              </span>
+            </a>
+            <Link
+              to="/cart"
+              className="cls-icon-btn"
+              style={{ background: 'var(--surface)' }}
+              onClick={close}
+              title="סל קניות"
+            >
+              <Icon name="bag" size={20} />
+              <span className="label">
+                <span className="top">הסל</span>
+                <span className="bot">שלי</span>
+              </span>
+              {totalItems > 0 && <span className="cart-pill">{totalItems}</span>}
+            </Link>
+            <button
+              className="cls-menu-toggle"
+              aria-label={open ? 'סגור תפריט' : 'פתח תפריט'}
+              onClick={() => setOpen(o => !o)}
+            >
+              <Icon name={open ? 'x' : 'menu'} />
+            </button>
+          </div>
+        </div>
+
+        <div className="cls-mobile-drawer">
+          <Link to="/" onClick={close}>כל המוצרים</Link>
+          {categories.map(c => (
+            <Link key={c.id} to={`/?categoryId=${c.id}`} onClick={close}>
+              {c.nameHe}
+            </Link>
+          ))}
+          <a onClick={() => { comingSoon('מבצעים'); close() }}>מבצעים חמים</a>
+          <a onClick={() => { comingSoon('חדש בקטלוג'); close() }}>חדש בקטלוג</a>
+          <a onClick={() => { comingSoon('מועדפים'); close() }}>מועדפים</a>
+          {user ? (
+            <a onClick={() => { logout(); nav('/'); close() }} style={{ color: 'var(--accent)' }}>
               התנתקות
             </a>
-          </>
-        ) : (
-          <>
-            <Link to="/login" onClick={close}>התחברות</Link>
-            <Link to="/register" onClick={close} style={{ color: 'var(--olive-2)', fontWeight: 600 }}>
-              הרשמה
-            </Link>
-          </>
-        )}
-      </div>
-    </header>
+          ) : (
+            <>
+              <Link to="/login" onClick={close}>התחברות</Link>
+              <Link to="/register" onClick={close} style={{ color: 'var(--accent)', fontWeight: 700 }}>
+                הרשמה
+              </Link>
+            </>
+          )}
+        </div>
+      </header>
+
+      <nav className="cls-deptnav">
+        <div className="cls-deptnav-inner">
+          <button
+            className="all-btn"
+            onClick={() => nav('/')}
+            type="button"
+          >
+            <Icon name="grid" size={14} stroke={2.2} />
+            כל המחלקות
+          </button>
+          <Link to="/" className={onCatalog && !searchParams.get('categoryId') ? 'active' : ''}>
+            ראשי
+          </Link>
+          {categories.map(c => {
+            const isActive = searchParams.get('categoryId') === String(c.id)
+            return (
+              <Link
+                key={c.id}
+                to={`/?categoryId=${c.id}`}
+                className={isActive ? 'active' : ''}
+              >
+                {c.nameHe}
+              </Link>
+            )
+          })}
+          <a onClick={() => comingSoon('מבצעים חמים')}>מבצעים חמים</a>
+          <a onClick={() => comingSoon('חדש בקטלוג')}>חדש בקטלוג</a>
+          <div className="end">
+            <span className="deal">
+              <Icon name="bolt" size={14} />
+              משלוח חינם מ-199₪
+            </span>
+          </div>
+        </div>
+      </nav>
+    </>
   )
 }

@@ -1,0 +1,30 @@
+{
+  "category": {
+    "slug": "bags-luggage",
+    "nameHe": "תיקים ומזוודות",
+    "sortOrder": 4
+  },
+  "imageDir": "new items",
+  "products": [
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.09.jpeg",      "sku": "BAG-001", "slug": "swiss-digital-usb-backpack",     "nameHe": "תיק גב Swiss Digital כחול עם USB", "descriptionHe": "תיק גב גדול 17 אינץ׳, יציאת USB לטעינה, מתאים למחשב נייד ולטיולים", "priceAgorot": 24900, "stockQty": 12 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.10.jpeg",      "sku": "BAG-002", "slug": "mingxin-9810-laptop-bag",        "nameHe": "תיק לפטופ Mingxin 9810",            "descriptionHe": "תיק כתף ללפטופ עד 15.6 אינץ׳, חומר אוקספורד, רצועה מתכווננת",       "priceAgorot": 15900, "stockQty": 20 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.10 (1).jpeg",  "sku": "BAG-003", "slug": "since-1979-9015-bag",            "nameHe": "תיק לפטופ Since 1979 דגם 9015",     "descriptionHe": "תיק כתף עסקי ללפטופ, כיסים מרובים, נשיאה אורכית",                   "priceAgorot": 16900, "stockQty": 18 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.10 (2).jpeg",  "sku": "LUG-001", "slug": "silver-hardshell-cabin",         "nameHe": "מזוודה קשיחה כסופה לקבינה",        "descriptionHe": "מזוודת ABS קשיחה, גלגלי ספינר 360°, בטנת בד תכלת, גודל קבינה",        "priceAgorot": 39900, "stockQty": 8  },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.10 (3).jpeg",  "sku": "BAG-004", "slug": "cabin-flux-blue-travel",         "nameHe": "תיק טיסה Cabin Flux כחול",          "descriptionHe": "תיק גב לקבינה, פתיחה רחבה, מגיע עם 2 קוביות אריזה ושקית נעליים",     "priceAgorot": 28900, "stockQty": 14 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.11.jpeg",      "sku": "BAG-005", "slug": "grey-lilac-tote",                "nameHe": "תיק יד אפור-לילך לנשים",            "descriptionHe": "תיק יד נשי אורבני, ידיות בד וחגורת כתף נשלפת, מרקם דקורטיבי",        "priceAgorot": 13900, "stockQty": 25 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.11 (1).jpeg",  "sku": "BAG-006", "slug": "cabin-flux-yellow-travel",       "nameHe": "תיק טיסה Cabin Flux צהוב",          "descriptionHe": "תיק גב לקבינה צהוב חרדל, רצועות דחיסה, יציאת USB",                   "priceAgorot": 26900, "stockQty": 10 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.11 (2).jpeg",  "sku": "BAG-007", "slug": "trussardi-black-leather-messenger","nameHe": "תיק כתף Trussardi עור שחור",       "descriptionHe": "תיק כתף עסקי מעור איטלקי אמיתי, סגירה מגנטית, כיס פנימי",             "priceAgorot": 45900, "stockQty": 6  },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.11 (3).jpeg",  "sku": "BAG-008", "slug": "trussardi-brown-briefcase",      "nameHe": "תיק עסקים Trussardi עור חום",       "descriptionHe": "תיק עסקים מקצועי מעור איטלקי חום, מנעול קומבינציה, תפרים זהובים",     "priceAgorot": 68900, "stockQty": 5  },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.12.jpeg",      "sku": "LUG-002", "slug": "weshengda-black-rolling-tote",   "nameHe": "מזוודת טרולי Weshengda שחורה",      "descriptionHe": "מזוודה רכה על גלגלים, ידית טלסקופית, אבזמים זהובים, מתאימה לקבינה",   "priceAgorot": 32900, "stockQty": 11 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.12 (1).jpeg",  "sku": "BAG-009", "slug": "trussardi-small-crossbody",      "nameHe": "תיק כתף Trussardi קטן",             "descriptionHe": "תיק חצוף קטן מעור שחור, רוכסן עליון, פסים אדום-כחול-לבן",            "priceAgorot": 38900, "stockQty": 7  },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.12 (2).jpeg",  "sku": "LUG-003", "slug": "swiss-laptop-rolling-case",      "nameHe": "מזוודת מחשב Swiss 18 אינץ׳",        "descriptionHe": "מזוודה רכה לקבינה 18 אינץ׳, 4 גלגלי ספינר, תא לפטופ מרופד",          "priceAgorot": 37900, "stockQty": 10 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.12 (3).jpeg",  "sku": "LUG-004", "slug": "weshengda-beige-rolling-tote",   "nameHe": "מזוודת טרולי Weshengda בז׳",        "descriptionHe": "מזוודה רכה בז׳ קרם, גימור זהב, מתפצלת לתיק יד",                       "priceAgorot": 33900, "stockQty": 9  },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.12 (4).jpeg",  "sku": "LUG-005", "slug": "navy-4pc-luggage-set",           "nameHe": "סט מזוודות נייבי 4 חלקים",          "descriptionHe": "סט 4 מזוודות באותו עיצוב — 20/24/28/32 אינץ׳, ידיות זהובות, גלגלי ספינר","priceAgorot": 99900, "stockQty": 4  },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.13.jpeg",      "sku": "LUG-006", "slug": "swiss-soft-rolling-laptop",      "nameHe": "מזוודת מחשב Swiss רכה שחורה",       "descriptionHe": "מזוודת רולר רכה אלגנטית, 4 גלגלים, תא מחשב מרופד, מתאימה לקבינה",     "priceAgorot": 35900, "stockQty": 12 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.13 (1).jpeg",  "sku": "BAG-010", "slug": "mingxin-8302-vertical-bag",      "nameHe": "תיק לפטופ אנכי Mingxin 8302",        "descriptionHe": "תיק כתף אנכי קטן ללפטופ 10 אינץ׳/טאבלט, מידות 25x21x8 ס״מ",          "priceAgorot": 11900, "stockQty": 22 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.13 (2).jpeg",  "sku": "BAG-011", "slug": "mingxin-8305-flap-bag",          "nameHe": "תיק לפטופ עם דש Mingxin 8305",       "descriptionHe": "תיק כתף עם דש עליון, סגירה מגנטית, מידות 25x21x8 ס״מ",                "priceAgorot": 11900, "stockQty": 22 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.13 (3).jpeg",  "sku": "BAG-012", "slug": "mingxin-9318-classic-bag",       "nameHe": "תיק לפטופ קלאסי Mingxin 9318",       "descriptionHe": "תיק כתף קלאסי, כיס קדמי גדול, מידות 25x21x8 ס״מ",                    "priceAgorot": 11900, "stockQty": 22 },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.14.jpeg",      "sku": "BAG-013", "slug": "swiss-alpin-90l-hiking",         "nameHe": "תיק טיולים Swiss Alpin 90 ליטר",     "descriptionHe": "תיק טיולים גדול 90 ליטר, רצועות חזה ומותן, רשת מתיחה חיצונית",       "priceAgorot": 44900, "stockQty": 6  },
+    { "file": "WhatsApp Image 2026-05-14 at 11.49.14 (1).jpeg",  "sku": "BAG-014", "slug": "mingxin-217-horizontal-bag",     "nameHe": "תיק לפטופ אופקי Mingxin 217",        "descriptionHe": "תיק כתף אופקי גדול ללפטופ, מידות 25x35x11 ס״מ",                      "priceAgorot": 13900, "stockQty": 18 }
+  ]
+}

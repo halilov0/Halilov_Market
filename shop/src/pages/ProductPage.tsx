@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { api, formatPrice, type Product, type Category } from '../api'
+import { api, type Product, type Category } from '../api'
 import { useCart } from '../cart/cartStore'
 import { Icon } from '../components/Icon'
 import { Footer } from '../components/Footer'
 import { comingSoon } from '../components/Toast'
+
+function formatPriceParts(agorot: number) {
+  const [s, a] = (agorot / 100).toFixed(2).split('.')
+  return { shekels: s, agorot: a }
+}
 
 export function ProductPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -28,174 +33,133 @@ export function ProductPage() {
     api<Category[]>('/api/categories').then(setCategories).catch(() => {})
   }, [])
 
-  if (error) return <div className="hm-page"><div className="hm-error">{error}</div></div>
-  if (!product) return <div className="hm-page"><p style={{ color: 'var(--ink-3)' }}>טוען…</p></div>
+  if (error) return <div className="cls-page"><div className="hm-error">{error}</div></div>
+  if (!product) return <div className="cls-page"><p style={{ color: 'var(--ink-3)' }}>טוען…</p></div>
 
   const categoryName = product.categoryId != null
     ? categories.find(c => c.id === product.categoryId)?.nameHe
     : undefined
 
   const outOfStock = product.stockQty <= 0
+  const lowStock = product.stockQty > 0 && product.stockQty < 10
   const lineTotal = product.priceAgorot * quantity
+  const totalParts = formatPriceParts(lineTotal)
+  const price = formatPriceParts(product.priceAgorot)
 
   return (
     <>
-      <div className="hm-page">
-        <div className="hm-crumb">
-          <Link to="/" style={{ color: 'var(--ink-3)' }}>קטלוג</Link>
+      <div className="cls-page">
+        <div className="cls-crumb">
+          <Link to="/">קטלוג</Link>
           {categoryName && (
             <>
               <span className="sep">›</span>
-              <span>{categoryName}</span>
+              <Link to={`/?categoryId=${product.categoryId}`}>{categoryName}</Link>
             </>
           )}
           <span className="sep">›</span>
-          <span style={{ color: 'var(--ink)' }}>{product.nameHe}</span>
+          <span className="current">{product.nameHe}</span>
         </div>
 
-        <div className="hm-product-detail">
-          {/* gallery */}
-          <div>
-            <div style={{
-              aspectRatio: '1/1', borderRadius: 'var(--r-xl)',
-              background: 'var(--card)', border: '1px solid var(--line)',
-              position: 'relative', overflow: 'hidden',
-              display: 'grid', placeItems: 'center',
-            }}>
-              {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={product.nameHe}
-                  style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 24 }}
-                />
-              ) : (
-                <>
-                  <div style={{
-                    position: 'absolute', inset: 0,
-                    background: 'repeating-linear-gradient(135deg, transparent 0 18px, rgba(26,22,18,.025) 18px 19px)',
-                  }} />
-                  <span style={{
-                    fontFamily: 'var(--mono)', fontSize: 13, letterSpacing: '0.2em',
-                    color: 'var(--ink-3)', background: 'var(--paper)',
-                    padding: '10px 18px', border: '1px solid var(--line)',
-                    borderRadius: 'var(--r-pill)', textTransform: 'uppercase',
-                  }}>{product.sku}</span>
-                </>
-              )}
+        <div className="cls-pdp">
+          <div className="cls-pdp-gallery">
+            <div className="badges">
+              {outOfStock && <span className="badge-pill out" style={{ background: 'var(--ink-4)', color: '#fff', fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 'var(--r-xs)' }}>אזל</span>}
+              {!outOfStock && lowStock && <span className="badge-pill" style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 'var(--r-xs)' }}>מלאי אחרון</span>}
             </div>
+            {product.imageUrl ? (
+              <img src={product.imageUrl} alt={product.nameHe} />
+            ) : (
+              <span className="ph">{product.sku}</span>
+            )}
           </div>
 
-          {/* info */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div className="cls-pdp-info">
             <div>
-              <div className="hm-meta" style={{
-                textTransform: 'uppercase', letterSpacing: '0.16em',
-                color: 'var(--terracotta)', fontFamily: 'var(--mono)',
-              }}>
+              <div className="eyebrow">
                 {categoryName ? `${categoryName} · ` : ''}{product.sku}
               </div>
-              <h1 style={{ fontSize: 46, marginTop: 8 }}>{product.nameHe}</h1>
+              <h1>{product.nameHe}</h1>
             </div>
 
-            {product.descriptionHe && (
-              <p style={{ color: 'var(--ink-2)', lineHeight: 1.65 }}>{product.descriptionHe}</p>
-            )}
+            {product.descriptionHe && <p className="desc">{product.descriptionHe}</p>}
 
-            <div style={{
-              padding: '16px 18px', background: 'var(--paper-2)',
-              borderRadius: 'var(--r-md)', display: 'flex',
-              justifyContent: 'space-between', alignItems: 'center',
-            }}>
+            <div className="cls-pdp-price-box">
               <div>
-                <div className="hm-meta">מחיר ליחידה</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 34, fontWeight: 500 }}>
-                    {formatPrice(product.priceAgorot)}
-                  </span>
-                  <span className="hm-meta">/ יחידה</span>
+                <div className="label">מחיר ליחידה</div>
+                <div className="price">
+                  <span className="sym">₪</span>{price.shekels}
+                  <span className="agorot">.{price.agorot}</span>
                 </div>
               </div>
-              <div style={{ textAlign: 'start' }}>
+              <div style={{ textAlign: 'end' }}>
                 {outOfStock ? (
-                  <span className="hm-badge hm-badge-out">אזל מהמלאי</span>
+                  <span className="stock-pill out"><span className="dot" />אזל מהמלאי</span>
                 ) : (
-                  <span className="hm-badge hm-badge-leaf">
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--leaf)' }} />
-                    במלאי · {product.stockQty} יח׳
-                  </span>
+                  <span className="stock-pill in"><span className="dot" />במלאי · {product.stockQty} יח׳</span>
                 )}
-                <div className="hm-meta" style={{ marginTop: 6 }}>משלוח חינם מעל ₪150</div>
+                <div className="ship-note">משלוח חינם מעל ₪199</div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <div style={{
-                display: 'flex', alignItems: 'center',
-                border: '1px solid var(--line)', borderRadius: 'var(--r-pill)',
-                background: 'var(--card)', overflow: 'hidden',
-              }}>
+            <div className="cls-pdp-cta-row">
+              <div className="cls-qty">
                 <button
                   type="button"
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
                   disabled={quantity <= 1}
-                  style={{ width: 42, height: 44, background: 'none', border: 'none' }}
+                  aria-label="פחות"
                 >
-                  <Icon name="minus" size={16} />
+                  <Icon name="minus" size={16} stroke={2.2} />
                 </button>
-                <span className="mono" style={{ padding: '0 14px', fontWeight: 600, minWidth: 24, textAlign: 'center' }}>
-                  {quantity}
-                </span>
+                <span className="val">{quantity}</span>
                 <button
                   type="button"
                   onClick={() => setQuantity(q => Math.min(Math.min(99, product.stockQty), q + 1))}
                   disabled={quantity >= Math.min(99, product.stockQty)}
-                  style={{ width: 42, height: 44, background: 'none', border: 'none' }}
+                  aria-label="עוד"
                 >
-                  <Icon name="plus" size={16} />
+                  <Icon name="plus" size={16} stroke={2.2} />
                 </button>
               </div>
               <button
-                className="hm-btn hm-btn-primary hm-btn-lg"
-                style={{ flex: 1, justifyContent: 'center' }}
+                className="add-cta"
                 disabled={outOfStock}
                 onClick={() => add(product, quantity)}
               >
-                <Icon name="bag" size={16} /> הוספה לסל · {formatPrice(lineTotal)}
+                <Icon name="bag" size={16} stroke={2.2} />
+                הוסף לסל · ₪{totalParts.shekels}.{totalParts.agorot}
               </button>
               <button
-                className="hm-icon-btn"
-                style={{ width: 48, height: 48 }}
+                className="fav-cta"
                 onClick={() => comingSoon('מועדפים')}
                 aria-label="הוסף למועדפים"
+                type="button"
               >
-                <Icon name="heart" />
+                <Icon name="heart" size={18} />
               </button>
             </div>
 
             <button
-              className="hm-btn hm-btn-ghost"
-              style={{ justifyContent: 'center' }}
+              className="cls-pdp-buy-now"
               disabled={outOfStock}
               onClick={() => { add(product, quantity); nav('/cart') }}
+              type="button"
             >
               קנייה מהירה
+              <Icon name="arrow" size={14} stroke={2.2} />
             </button>
 
-            <div className="hm-three-col" style={{ gap: 10 }}>
+            <div className="cls-pdp-trust">
               {([
-                ['truck',  'משלוח חינם',    'מעל ₪150 · עד 2 ימי עסקים'],
-                ['leaf',   'איכות מובטחת', 'החזר מלא אם לא מרוצים'],
+                ['truck',  'משלוח חינם',   'מעל ₪199 · עד 2 ימי עסקים'],
                 ['secure', 'תשלום מאובטח',  'Grow/Meshulam · PCI'],
+                ['pkg',    'החזרות 14 יום', 'בלי שאלות. בלי כאב ראש.'],
               ] as const).map(([i, t, s]) => (
-                <div key={i} style={{
-                  padding: 12, borderRadius: 'var(--r-md)',
-                  background: 'var(--card)', border: '1px solid var(--line)',
-                }}>
-                  <div style={{ color: 'var(--olive-2)', marginBottom: 6 }}>
-                    <Icon name={i} size={18} />
-                  </div>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{t}</div>
-                  <div className="hm-meta" style={{ fontSize: 11.5 }}>{s}</div>
+                <div key={i} className="tile">
+                  <div className="ico"><Icon name={i} size={18} /></div>
+                  <div className="t">{t}</div>
+                  <div className="s">{s}</div>
                 </div>
               ))}
             </div>

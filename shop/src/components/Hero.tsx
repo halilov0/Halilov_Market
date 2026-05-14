@@ -1,23 +1,64 @@
 import { Link } from 'react-router-dom'
+import { Icon } from './Icon'
+import { comingSoon } from './Toast'
 
 export function Hero() {
   return (
-    <div className="hm-hero">
-      <div>
-        <div className="kicker">קטלוג · 2026</div>
-        <h1>כל מה שמסביב,<br />במקום אחד.</h1>
-        <p className="lede">
-          סופר ישראלי און-ליין — מצרכי בית, מזון ומשקאות. הזמנה מהירה,
-          משלוח ביום העסקים הבא לדלת.
-        </p>
-        <div className="cta-row">
-          <Link to="/" className="cta-primary">לקטלוג המלא ↗</Link>
-          <a className="cta-ghost" onClick={(e) => { e.preventDefault() }}>מה חדש השבוע</a>
+    <section className="cls-hero">
+      <div className="cls-hero-main">
+        <div>
+          <div className="eyebrow">
+            <span className="dot" />
+            המרקט המוביל ישראל · 2026
+          </div>
+          <h1>
+            כל מה שצריך<br />
+            <span className="hl">במקום אחד.</span>
+          </h1>
+          <p>
+            אלפי מוצרים, מאות מותגים, משלוח מהיר לכל הארץ.
+            המרקט אונליין שעובד בשבילך — מבוקר ועד ערב.
+          </p>
+          <div className="cta">
+            <Link to="/" className="primary">
+              לקטלוג המלא
+              <Icon name="arrow" size={14} stroke={2.2} />
+            </Link>
+            <a className="ghost" onClick={() => comingSoon('מבצעים חמים')}>
+              מבצעים חמים
+            </a>
+          </div>
+          <div className="stats">
+            <div className="stat">
+              <div className="num">26+</div>
+              <div className="lbl">מוצרים</div>
+            </div>
+            <div className="stat">
+              <div className="num">4</div>
+              <div className="lbl">מחלקות</div>
+            </div>
+            <div className="stat">
+              <div className="num">24/7</div>
+              <div className="lbl">תמיכה</div>
+            </div>
+          </div>
+        </div>
+        <div className="cls-hero-art">
+          <span className="tag">HALILOV · MARKET</span>
         </div>
       </div>
-      <div className="art">
-        <div className="stamp">EST · 2026</div>
+
+      <div className="cls-hero-side">
+        <div className="eyebrow">דיל היום</div>
+        <h3>משלוח חינם<br />מעל 199₪</h3>
+        <div className="price-strike">
+          <span className="old">29₪</span>
+          <span className="now">חינם</span>
+        </div>
+        <div className="side-art">
+          <span className="mini-tag">ש״ח</span>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
