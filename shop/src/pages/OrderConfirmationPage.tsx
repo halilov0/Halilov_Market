@@ -4,7 +4,6 @@ import { api, formatPrice, type OrderView } from '../api'
 import { Icon } from '../components/Icon'
 import { Footer } from '../components/Footer'
 import { useAuth } from '../auth/authStore'
-import { comingSoon } from '../components/Toast'
 
 export function OrderConfirmationPage() {
   const { orderNumber } = useParams<{ orderNumber: string }>()
@@ -131,17 +130,21 @@ export function OrderConfirmationPage() {
             המשך קניות
             <Icon name="arrow" size={14} stroke={2.2} />
           </Link>
-          <button
-            onClick={() => comingSoon('חשבונית')}
-            style={{
-              background: '#fff', color: 'var(--ink)',
-              border: '1px solid var(--line-2)',
-              borderRadius: 'var(--r-md)', padding: '12px 24px',
-              fontWeight: 700, fontSize: 14, cursor: 'pointer',
-            }}
-          >
-            הורד חשבונית
-          </button>
+          {order.status !== 'PENDING' && order.status !== 'CANCELLED' && (
+            <Link
+              to={`/invoice/${order.orderNumber}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: '#fff', color: 'var(--ink)',
+                border: '1px solid var(--line-2)',
+                borderRadius: 'var(--r-md)', padding: '12px 24px',
+                fontWeight: 700, fontSize: 14,
+              }}
+            >
+              הורד חשבונית
+            </Link>
+          )}
         </div>
       </div>
       <Footer />

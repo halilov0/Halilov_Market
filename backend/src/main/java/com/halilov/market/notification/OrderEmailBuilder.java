@@ -31,31 +31,33 @@ public final class OrderEmailBuilder {
             escape(shipping.getCity()) + (shipping.getPostalCode() != null ? " " + escape(shipping.getPostalCode()) : "") + "<br>" +
             escape(shipping.getPhone());
 
-        String ctaUrl = siteBaseUrl == null ? "" : siteBaseUrl.replaceAll("/+$", "") + "/confirmation/" + order.getOrderNumber();
+        String ctaUrl = (siteBaseUrl == null || siteBaseUrl.isBlank())
+            ? ""
+            : siteBaseUrl.trim().replaceAll("/+$", "") + "/orders/" + order.getOrderNumber();
 
-        return "<!doctype html><html dir=\"rtl\" lang=\"he\"><body style=\"margin:0;padding:0;background:#f6f6f6;font-family:Arial,sans-serif;color:#0f1014\">"
-            + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f6f6f6;padding:24px 0\"><tr><td align=\"center\">"
-            + "<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background:#fff;border:1px solid #eee;border-radius:8px;overflow:hidden\">"
-            + "<tr><td style=\"background:#0f1014;color:#fff;padding:20px;text-align:center\"><h1 style=\"margin:0;font-size:22px\">חלילוב מרקט</h1></td></tr>"
-            + "<tr><td style=\"padding:24px\">"
-            + "<h2 style=\"margin:0 0 8px 0;font-size:20px\">תודה על ההזמנה, " + escape(customerName) + "!</h2>"
-            + "<p style=\"margin:0 0 16px 0;color:#555\">קיבלנו את התשלום וההזמנה שלך בעיבוד.</p>"
-            + "<p style=\"margin:0 0 16px 0\"><strong>מספר הזמנה:</strong> <span style=\"font-family:monospace\">" + escape(order.getOrderNumber()) + "</span></p>"
-            + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:collapse;margin:16px 0\">"
+        return "<!doctype html><html dir=\"rtl\" lang=\"he\"><body style=\"margin:0;padding:0;background:#f6f6f6;font-family:Arial,sans-serif;color:#0f1014;direction:rtl;text-align:right\">"
+            + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" dir=\"rtl\" style=\"background:#f6f6f6;padding:24px 0;direction:rtl\"><tr><td align=\"center\">"
+            + "<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" dir=\"rtl\" style=\"max-width:600px;background:#fff;border:1px solid #eee;border-radius:8px;overflow:hidden;direction:rtl\">"
+            + "<tr><td style=\"background:#0f1014;color:#fff;padding:20px;text-align:center;direction:rtl\"><h1 style=\"margin:0;font-size:22px;direction:rtl\">חלילוב מרקט</h1></td></tr>"
+            + "<tr><td style=\"padding:24px;direction:rtl;text-align:right\">"
+            + "<h2 style=\"margin:0 0 8px 0;font-size:20px;direction:rtl;text-align:right\">תודה על ההזמנה, " + escape(customerName) + "!</h2>"
+            + "<p style=\"margin:0 0 16px 0;color:#555;direction:rtl;text-align:right\">קיבלנו את התשלום וההזמנה שלך בעיבוד.</p>"
+            + "<p style=\"margin:0 0 16px 0;direction:rtl;text-align:right\"><strong>מספר הזמנה:</strong> <span style=\"font-family:monospace\">" + escape(order.getOrderNumber()) + "</span></p>"
+            + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" dir=\"rtl\" style=\"border-collapse:collapse;margin:16px 0;direction:rtl\">"
             + "<thead><tr style=\"background:#fafafa\">"
             + "<th style=\"padding:8px;text-align:right;font-size:13px;color:#666\">פריט</th>"
             + "<th style=\"padding:8px;text-align:center;font-size:13px;color:#666\">כמות</th>"
             + "<th style=\"padding:8px;text-align:left;font-size:13px;color:#666\">סכום</th>"
             + "</tr></thead><tbody>" + rows + "</tbody></table>"
-            + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:collapse;margin-top:8px\">"
+            + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" dir=\"rtl\" style=\"border-collapse:collapse;margin-top:8px;direction:rtl\">"
             + summaryRow("סכום ביניים", money(order.getSubtotalAgorot()))
             + summaryRow("משלוח", order.getShippingAgorot() == 0 ? "חינם" : money(order.getShippingAgorot()))
-            + summaryRow("מע&quot;מ כלול", money(order.getVatAgorot()))
-            + "<tr><td style=\"padding:12px 8px;border-top:2px solid #0f1014;font-weight:bold;font-size:16px\">סה&quot;כ</td>"
+            + summaryRow("מע\"מ כלול", money(order.getVatAgorot()))
+            + "<tr><td style=\"padding:12px 8px;border-top:2px solid #0f1014;font-weight:bold;font-size:16px;text-align:right\">סה\"כ</td>"
             + "<td style=\"padding:12px 8px;border-top:2px solid #0f1014;font-weight:bold;font-size:16px;text-align:left;font-family:monospace\">" + money(order.getTotalAgorot()) + "</td></tr>"
             + "</table>"
             + (address.isEmpty() ? "" :
-                "<div style=\"margin-top:24px;padding:16px;background:#fafafa;border-radius:6px\">"
+                "<div style=\"margin-top:24px;padding:16px;background:#fafafa;border-radius:6px;direction:rtl;text-align:right\">"
                 + "<div style=\"font-size:13px;color:#666;margin-bottom:6px\">כתובת למשלוח</div>"
                 + "<div style=\"line-height:1.6\">" + address + "</div>"
                 + "</div>")
@@ -69,7 +71,7 @@ public final class OrderEmailBuilder {
     }
 
     private static String summaryRow(String label, String value) {
-        return "<tr><td style=\"padding:6px 8px;color:#555\">" + escape(label) + "</td>"
+        return "<tr><td style=\"padding:6px 8px;color:#555;text-align:right\">" + escape(label) + "</td>"
             + "<td style=\"padding:6px 8px;text-align:left;font-family:monospace\">" + value + "</td></tr>";
     }
 

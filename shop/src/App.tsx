@@ -11,6 +11,7 @@ import { CheckoutPage } from './pages/CheckoutPage'
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage'
 import { MockPaymentPage } from './pages/MockPaymentPage'
 import { TrackOrderPage } from './pages/TrackOrderPage'
+import { InvoicePage } from './pages/InvoicePage'
 import { useAuth } from './auth/authStore'
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
   const hideHeader = loc.pathname === '/login'
     || loc.pathname === '/register'
     || loc.pathname.startsWith('/payment/')
+    || loc.pathname.startsWith('/invoice/')
 
   return (
     <>
@@ -40,6 +42,7 @@ function App() {
         <Route path="/orders/:orderNumber" element={<OrderConfirmationPage />} />
         <Route path="/payment/mock" element={<MockPaymentPage />} />
         <Route path="/track" element={<TrackOrderPage />} />
+        <Route path="/invoice/:orderNumber" element={<InvoicePage />} />
         <Route path="*" element={<div className="hm-page"><h1>404</h1></div>} />
       </Routes>
       <ToastHost />

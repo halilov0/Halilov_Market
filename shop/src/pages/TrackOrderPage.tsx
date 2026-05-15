@@ -243,6 +243,25 @@ function OrderCard({
                 {order.shipping.postalCode && ` · ${order.shipping.postalCode}`}
               </div>
             )}
+            {order.status !== 'PENDING' && order.status !== 'CANCELLED' && (
+              <div style={{ marginTop: 14, textAlign: 'center' }}>
+                <Link
+                  to={`/invoice/${order.orderNumber}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    background: '#fff', color: 'var(--ink)',
+                    border: '1px solid var(--line-2)',
+                    borderRadius: 'var(--r-md)', padding: '10px 18px',
+                    fontWeight: 700, fontSize: 13,
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  <Icon name="pkg" size={14} stroke={2.2} />
+                  הורד חשבונית
+                </Link>
+              </div>
+            )}
           </>
         )}
       </div>
