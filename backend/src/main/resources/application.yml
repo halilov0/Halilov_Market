@@ -54,6 +54,14 @@ app:
       secretAccessKey: ${R2_SECRET_ACCESS_KEY:}
       bucket: ${R2_BUCKET:}
       publicBaseUrl: ${R2_PUBLIC_BASE_URL:}
+  email:
+    provider: ${EMAIL_PROVIDER:log}
+    fromEmail: ${EMAIL_FROM:no-reply@halilov.local}
+    fromName: ${EMAIL_FROM_NAME:חלילוב מרקט}
+    adminBcc: ${EMAIL_ADMIN_BCC:}
+    siteBaseUrl: ${SITE_BASE_URL:}
+    brevo:
+      apiKey: ${BREVO_API_KEY:}
 
 logging:
   level:

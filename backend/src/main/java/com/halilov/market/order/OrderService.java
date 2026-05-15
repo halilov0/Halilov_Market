@@ -2,13 +2,20 @@ package com.halilov.market.order;
 
 import com.halilov.market.catalog.Product;
 import com.halilov.market.catalog.ProductRepository;
+import com.halilov.market.notification.EmailMessage;
+import com.halilov.market.notification.EmailService;
+import com.halilov.market.notification.OrderEmailBuilder;
 import com.halilov.market.user.User;
 import com.halilov.market.user.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,19 +24,29 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class OrderService {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     private static final int VAT_RATE_PERCENT = 18; // VAT 18% inclusive
 
     private final OrderRepository orders;
     private final AddressRepository addresses;
     private final ProductRepository products;
     private final UserRepository users;
+    private final EmailService emailService;
+    private final String adminBcc;
+    private final String siteBaseUrl;
 
     public OrderService(OrderRepository orders, AddressRepository addresses,
-                        ProductRepository products, UserRepository users) {
+                        ProductRepository products, UserRepository users,
+                        EmailService emailService,
+                        @Value("${app.email.adminBcc:}") String adminBcc,
+                        @Value("${app.email.siteBaseUrl:}") String siteBaseUrl) {
         this.orders = orders;
         this.addresses = addresses;
         this.products = products;
         this.users = users;
+        this.emailService = emailService;
+        this.adminBcc = adminBcc;
+        this.siteBaseUrl = siteBaseUrl;
     }
 
     @Transactional
@@ -171,7 +188,35 @@ public class OrderService {
         order.setStatus(newStatus);
         Address addr = order.getShippingAddressId() != null
             ? addresses.findById(order.getShippingAddressId()).orElse(null) : null;
+
+        if (old == OrderStatus.PENDING && newStatus == OrderStatus.PAID) {
+            sendOrderPaidEmail(order, addr);
+        }
+
         return OrderDtos.OrderView.from(order, addr);
+    }
+
+    private void sendOrderPaidEmail(Order order, Address addr) {
+        try {
+            User buyer = users.findById(order.getUserId()).orElse(null);
+            if (buyer == null) {
+                log.warn("order {} has no buyer user, skipping email", order.getOrderNumber());
+                return;
+            }
+            String customerName = addr != null && addr.getFullName() != null && !addr.getFullName().isBlank()
+                ? addr.getFullName() : buyer.getFullName();
+            List<String> bcc = new ArrayList<>();
+            if (adminBcc != null && !adminBcc.isBlank()) bcc.add(adminBcc.trim());
+            emailService.send(new EmailMessage(
+                buyer.getEmail(),
+                customerName,
+                OrderEmailBuilder.subject(order),
+                OrderEmailBuilder.html(order, addr, customerName, siteBaseUrl),
+                bcc
+            ));
+        } catch (Exception e) {
+            log.warn("failed to send order paid email for {}: {}", order.getOrderNumber(), e.toString());
+        }
     }
 
     private String generateOrderNumber() {
