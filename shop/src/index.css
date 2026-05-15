@@ -2249,3 +2249,160 @@ select.hm-input { appearance: none; background-image: linear-gradient(45deg, tra
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
 }
+
+/* ============================================================
+   Track Order page — status timeline + lookup form
+============================================================ */
+.cls-track-hero {
+  text-align: center;
+  margin: 32px 0 28px;
+}
+.cls-track-hero .eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.cls-track-hero h1 {
+  font-size: 38px;
+  margin-top: 8px;
+  letter-spacing: -0.01em;
+}
+.cls-track-hero p {
+  color: var(--ink-2);
+  margin-top: 10px;
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+.cls-track-form {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 26px;
+  display: grid;
+  gap: 14px;
+  box-shadow: var(--shadow-1);
+}
+.cls-track-form .row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.cls-track-form button[type="submit"] {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  padding: 14px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.cls-track-form button[type="submit"]:disabled { opacity: .5; cursor: wait; }
+.cls-track-form .err {
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+}
+
+.cls-timeline {
+  margin-top: 18px;
+  padding: 26px 18px 22px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  position: relative;
+}
+.cls-timeline .row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  position: relative;
+}
+.cls-timeline .row::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  inset-inline: 8%;
+  height: 2px;
+  background: var(--line);
+  z-index: 0;
+}
+.cls-timeline .row .bar {
+  position: absolute;
+  top: 16px;
+  inset-inline-end: 8%;
+  height: 2px;
+  background: var(--good);
+  z-index: 1;
+  transition: width .3s ease;
+}
+.cls-timeline .node {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.cls-timeline .dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--line);
+  display: grid;
+  place-items: center;
+  color: var(--ink-4);
+  font-weight: 700;
+  font-size: 13px;
+  transition: all .2s ease;
+}
+.cls-timeline .node.done .dot {
+  background: var(--good);
+  border-color: var(--good);
+  color: #fff;
+}
+.cls-timeline .node.current .dot {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(15, 16, 20, 0.08);
+}
+.cls-timeline .label {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.cls-timeline .node.done .label,
+.cls-timeline .node.current .label {
+  color: var(--ink);
+}
+
+.cls-timeline-terminal {
+  margin-top: 18px;
+  padding: 18px 20px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  color: var(--accent-deep);
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .cls-track-form .row-2 { grid-template-columns: 1fr; }
+  .cls-timeline { padding: 22px 6px 18px; }
+  .cls-timeline .label { font-size: 10.5px; }
+  .cls-timeline .dot { width: 26px; height: 26px; font-size: 11px; }
+  .cls-timeline .row::before,
+  .cls-timeline .row .bar { top: 13px; }
+}

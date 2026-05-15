@@ -10,6 +10,7 @@ import { CartPage } from './pages/CartPage'
 import { CheckoutPage } from './pages/CheckoutPage'
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage'
 import { MockPaymentPage } from './pages/MockPaymentPage'
+import { TrackOrderPage } from './pages/TrackOrderPage'
 import { useAuth } from './auth/authStore'
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders/:orderNumber" element={<OrderConfirmationPage />} />
         <Route path="/payment/mock" element={<MockPaymentPage />} />
+        <Route path="/track" element={<TrackOrderPage />} />
         <Route path="*" element={<div className="hm-page"><h1>404</h1></div>} />
       </Routes>
       <ToastHost />

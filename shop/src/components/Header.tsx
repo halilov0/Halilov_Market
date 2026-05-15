@@ -46,7 +46,7 @@ export function Header() {
           <span className="sep" />
           <a onClick={() => comingSoon('שירות לקוחות')}>שירות לקוחות 24/7</a>
           <span className="sep" />
-          <a onClick={() => comingSoon('מעקב הזמנה')}>מעקב הזמנה</a>
+          <Link to="/track">מעקב הזמנה</Link>
           <span className="sep" />
           <a onClick={() => comingSoon('חנויות מורשות')}>חנויות מורשות</a>
           <div className="util-end">

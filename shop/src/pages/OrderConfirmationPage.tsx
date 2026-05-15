@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { api, formatPrice, type OrderView } from '../api'
 import { Icon } from '../components/Icon'
 import { Footer } from '../components/Footer'
@@ -11,6 +11,7 @@ export function OrderConfirmationPage() {
   const [order, setOrder] = useState<OrderView | null>(null)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
+  const nav = useNavigate()
 
   useEffect(() => {
     if (!orderNumber) return
@@ -104,7 +105,7 @@ export function OrderConfirmationPage() {
               </div>
             </div>
             <button
-              onClick={() => comingSoon('מעקב משלוח')}
+              onClick={() => nav(`/track?orderNumber=${encodeURIComponent(order.orderNumber)}`)}
               style={{
                 background: '#fff', border: '1px solid var(--line-2)',
                 borderRadius: 'var(--r-md)', padding: '9px 16px',
