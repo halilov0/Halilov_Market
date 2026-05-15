@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
@@ -14,11 +14,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
+@Component
 @ConditionalOnProperty(name = "app.email.provider", havingValue = "brevo")
-public class BrevoEmailService implements EmailService {
+public class BrevoEmailTransport implements EmailTransport {
 
-    private static final Logger log = LoggerFactory.getLogger(BrevoEmailService.class);
+    private static final Logger log = LoggerFactory.getLogger(BrevoEmailTransport.class);
     private static final String BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 
     private final RestClient http;
@@ -26,7 +26,7 @@ public class BrevoEmailService implements EmailService {
     private final String fromEmail;
     private final String fromName;
 
-    public BrevoEmailService(
+    public BrevoEmailTransport(
         @Value("${app.email.brevo.apiKey:}") String apiKey,
         @Value("${app.email.fromEmail}") String fromEmail,
         @Value("${app.email.fromName}") String fromName
@@ -45,7 +45,7 @@ public class BrevoEmailService implements EmailService {
     }
 
     @Override
-    public void send(EmailMessage message) {
+    public void send(EmailMessage message) throws Exception {
         Map<String, Object> sender = new LinkedHashMap<>();
         sender.put("email", fromEmail);
         sender.put("name", fromName);
@@ -72,18 +72,16 @@ public class BrevoEmailService implements EmailService {
             if (!bccList.isEmpty()) body.put("bcc", bccList);
         }
 
-        try {
-            String payload = mapper.writeValueAsString(body);
-            String response = http.post()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(payload)
-                .retrieve()
-                .body(String.class);
-            log.info("[email:brevo] sent to={} subject={} resp={}",
-                message.toEmail(), message.subject(), response);
-        } catch (Exception e) {
-            log.warn("[email:brevo] send failed to={} subject={} err={}",
-                message.toEmail(), message.subject(), e.toString());
-        }
+        String payload = mapper.writeValueAsString(body);
+        // RestClient .retrieve() throws RestClientResponseException on 4xx/5xx
+        // (including 429 rate-limit). Let it propagate — EmailService.send
+        // catches and persists for retry.
+        String response = http.post()
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(payload)
+            .retrieve()
+            .body(String.class);
+        log.info("[email:brevo] sent to={} subject={} resp={}",
+            message.toEmail(), message.subject(), response);
     }
 }
