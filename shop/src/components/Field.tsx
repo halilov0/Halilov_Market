@@ -16,23 +16,24 @@ export const Field = forwardRef<HTMLInputElement | HTMLTextAreaElement, FieldPro
   { label, mono, error, ...rest },
   ref,
 ) {
+  const cls = `hm-input ${mono ? 'mono' : ''} ${error ? 'has-error' : ''}`.trim()
   return (
     <div className="hm-field">
       <label>{label}</label>
       {('multiline' in rest && rest.multiline) ? (
         <textarea
           ref={ref as React.Ref<HTMLTextAreaElement>}
-          className={`hm-input ${mono ? 'mono' : ''}`}
+          className={cls}
           {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)}
         />
       ) : (
         <input
           ref={ref as React.Ref<HTMLInputElement>}
-          className={`hm-input ${mono ? 'mono' : ''}`}
+          className={cls}
           {...(rest as InputHTMLAttributes<HTMLInputElement>)}
         />
       )}
-      {error && <div className="hm-error" style={{ fontSize: 12 }}>{error}</div>}
+      {error && <div className="cls-field-err">{error}</div>}
     </div>
   )
 })

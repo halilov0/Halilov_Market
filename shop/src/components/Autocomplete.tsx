@@ -11,14 +11,19 @@ type Props = {
   required?: boolean
   placeholder?: string
   disabled?: boolean
+  /** Minimum chars before fetching. 0 = fetch even on empty (browse-all mode). Default 0. */
   minChars?: number
+  /** Field-level validation error to render below the input. */
+  error?: string | null
+  onBlur?: () => void
 }
 
-const DEBOUNCE_MS = 200
+const DEBOUNCE_MS = 180
 
 export function Autocomplete({
   label, value, onChange, fetchSuggestions,
-  resetKey, required, placeholder, disabled, minChars = 1,
+  resetKey, required, placeholder, disabled,
+  minChars = 0, error, onBlur,
 }: Props) {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [open, setOpen] = useState(false)
@@ -35,6 +40,7 @@ export function Autocomplete({
 
   useEffect(() => {
     if (skipNextFetch.current) { skipNextFetch.current = false; return }
+    if (disabled) { setSuggestions([]); setOpen(false); return }
     const q = value.trim()
     if (q.length < minChars) { setSuggestions([]); setOpen(false); return }
     const myReq = ++reqId.current
@@ -44,19 +50,16 @@ export function Autocomplete({
         const res = await fetchSuggestions(q)
         if (reqId.current !== myReq) return
         setSuggestions(res)
-        setOpen(res.length > 0)
-        setHighlight(-1)
       } catch {
         if (reqId.current !== myReq) return
         setSuggestions([])
-        setOpen(false)
       } finally {
         if (reqId.current === myReq) setLoading(false)
       }
     }, DEBOUNCE_MS)
     return () => window.clearTimeout(t)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, resetKey])
+  }, [value, resetKey, disabled])
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -71,6 +74,24 @@ export function Autocomplete({
     onChange(s)
     setOpen(false)
     setHighlight(-1)
+  }
+
+  async function onFocus() {
+    if (disabled) return
+    if (suggestions.length > 0) { setOpen(true); return }
+    if (value.trim().length >= minChars) {
+      // Trigger the same fetch path as typing, so an empty-q focus loads the full list.
+      setLoading(true)
+      try {
+        const res = await fetchSuggestions(value.trim())
+        setSuggestions(res)
+        setOpen(res.length > 0)
+      } catch {
+        setSuggestions([])
+      } finally {
+        setLoading(false)
+      }
+    }
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -95,18 +116,19 @@ export function Autocomplete({
     <div className="hm-field" ref={wrapRef} style={{ position: 'relative' }}>
       <label>{label}</label>
       <input
-        className="hm-input"
+        className={`hm-input ${error ? 'has-error' : ''}`}
         type="text"
         value={value}
         required={required}
         placeholder={placeholder}
         disabled={disabled}
         autoComplete="off"
-        onChange={e => onChange(e.target.value)}
-        onFocus={() => { if (suggestions.length > 0) setOpen(true) }}
+        onChange={e => { onChange(e.target.value); setOpen(true) }}
+        onFocus={onFocus}
+        onBlur={onBlur}
         onKeyDown={onKeyDown}
       />
-      {open && (
+      {open && suggestions.length > 0 && (
         <ul className="cls-ac-list" role="listbox">
           {suggestions.map((s, i) => (
             <li
@@ -122,20 +144,23 @@ export function Autocomplete({
           ))}
         </ul>
       )}
-      {loading && value.trim().length >= minChars && (
+      {loading && (
         <div className="cls-ac-loading">…</div>
       )}
+      {error && <div className="cls-ac-err">{error}</div>}
     </div>
   )
 }
 
 // Convenience fetchers wired to the backend places API.
 export async function fetchCities(q: string): Promise<string[]> {
-  return api<string[]>(`/api/places/cities?q=${encodeURIComponent(q)}&limit=10`)
+  const params = new URLSearchParams({ limit: '50' })
+  if (q) params.set('q', q)
+  return api<string[]>(`/api/places/cities?${params.toString()}`)
 }
 
 export async function fetchStreets(city: string, q: string): Promise<string[]> {
-  const params = new URLSearchParams({ city, limit: '10' })
+  const params = new URLSearchParams({ city, limit: '50' })
   if (q) params.set('q', q)
   return api<string[]>(`/api/places/streets?${params.toString()}`)
 }

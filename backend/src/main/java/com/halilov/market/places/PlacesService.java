@@ -14,6 +14,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,24 +23,29 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Proxies data.gov.il CKAN datasets for Israeli cities + streets.
- * Government API is the authoritative source for delivery addresses.
- * Per-query in-memory cache cuts repeat traffic; gets reset when bounded.
+ *
+ * Strategy: pull the FULL dataset slice once (whole cities list, then per-city
+ * street list on demand), cache forever, then filter locally with substring match.
+ * CKAN's own full-text `q=` tokenizes Hebrew aggressively — "תל א" matches nothing
+ * because "א" is a sub-token. Local substring filtering on the cached list gives
+ * the user-expected behavior and lets us return an empty-query browse list.
  */
 @Service
 public class PlacesService {
 
     private static final Logger log = LoggerFactory.getLogger(PlacesService.class);
     private static final String CKAN_BASE = "https://data.gov.il/api/3/action/datastore_search";
-    private static final int MAX_CACHE_ENTRIES = 2000;
-    private static final int FETCH_LIMIT = 50;
+    /** Israel has ~1300 settlements and Tel Aviv tops the list at ~3000 streets. 10k is safe headroom. */
+    private static final int FULL_FETCH_LIMIT = 10000;
 
     private final RestClient http;
     private final ObjectMapper mapper = new ObjectMapper();
     private final String citiesResource;
     private final String streetsResource;
 
-    private final Map<String, List<String>> cityCache = new ConcurrentHashMap<>();
-    private final Map<String, List<String>> streetCache = new ConcurrentHashMap<>();
+    private volatile List<String> allCities;
+    private final Object citiesLock = new Object();
+    private final Map<String, List<String>> streetsByCity = new ConcurrentHashMap<>();
 
     public PlacesService(
         @Value("${app.places.citiesResource:5c78e9fa-c2e2-4771-93ff-7f400a12f7ba}") String citiesResource,
@@ -48,8 +54,9 @@ public class PlacesService {
         this.citiesResource = citiesResource;
         this.streetsResource = streetsResource;
         var factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout((int) Duration.ofSeconds(4).toMillis());
-        factory.setReadTimeout((int) Duration.ofSeconds(6).toMillis());
+        factory.setConnectTimeout((int) Duration.ofSeconds(5).toMillis());
+        // Full-dataset fetch (~1300 cities or ~3000 streets) needs more headroom than per-query.
+        factory.setReadTimeout((int) Duration.ofSeconds(20).toMillis());
         this.http = RestClient.builder()
             .requestFactory(factory)
             .defaultHeader("accept", "application/json")
@@ -57,71 +64,82 @@ public class PlacesService {
     }
 
     public List<String> searchCities(String q, int limit) {
-        String key = q == null ? "" : q.trim();
-        if (key.isEmpty()) return List.of();
-        List<String> cached = cityCache.get(key);
-        if (cached != null) return cap(cached, limit);
-        if (cityCache.size() > MAX_CACHE_ENTRIES) cityCache.clear();
-        List<String> fetched = ckanQuery(citiesResource, key, null, "שם_ישוב");
-        cityCache.put(key, fetched);
-        return cap(fetched, limit);
+        List<String> all = ensureCities();
+        return filter(all, q, limit);
     }
 
     public List<String> searchStreets(String city, String q, int limit) {
         if (city == null || city.isBlank()) return List.of();
         String cityKey = city.trim();
-        String qKey = q == null ? "" : q.trim();
-        String key = cityKey + "|" + qKey;
-        List<String> cached = streetCache.get(key);
-        if (cached != null) return cap(cached, limit);
-        if (streetCache.size() > MAX_CACHE_ENTRIES) streetCache.clear();
-        // Streets dataset has English field names (city_name, street_name) holding Hebrew values.
-        // CKAN `q` as a JSON object does per-field LIKE (filters do exact match and the data has
-        // trailing-space padding, so filters fail).
-        Map<String, String> jsonQ = new LinkedHashMap<>();
-        jsonQ.put("city_name", cityKey);
-        if (!qKey.isEmpty()) jsonQ.put("street_name", qKey);
-        List<String> fetched = ckanQueryJson(streetsResource, jsonQ, "street_name");
-        streetCache.put(key, fetched);
-        return cap(fetched, limit);
+        List<String> all = streetsByCity.get(cityKey);
+        if (all == null) {
+            all = fetchStreetsForCity(cityKey);
+            if (!all.isEmpty()) streetsByCity.put(cityKey, all);
+            // empty result not cached — let next call retry in case of transient miss
+        }
+        return filter(all, q, limit);
     }
 
-    private List<String> ckanQuery(String resource, String q, Map<String, String> filters, String returnField) {
-        StringBuilder url = new StringBuilder(CKAN_BASE);
-        url.append("?resource_id=").append(resource);
-        url.append("&limit=").append(FETCH_LIMIT);
-        if (q != null && !q.isBlank()) {
-            url.append("&q=").append(urlEnc(q));
-        }
-        if (filters != null && !filters.isEmpty()) {
-            try {
-                url.append("&filters=").append(urlEnc(mapper.writeValueAsString(filters)));
-            } catch (Exception e) {
-                log.warn("places: failed to serialize filters: {}", e.toString());
+    /** Substring filter on the cached list. Empty q returns first `limit` entries (browse mode). */
+    private static List<String> filter(List<String> source, String q, int limit) {
+        if (source == null || source.isEmpty()) return List.of();
+        String key = q == null ? "" : q.trim();
+        if (key.isEmpty()) return cap(source, limit);
+        List<String> out = new ArrayList<>();
+        for (String s : source) {
+            if (s.contains(key)) {
+                out.add(s);
+                if (out.size() >= limit) break;
             }
         }
-        return execAndExtract(url.toString(), returnField, resource, q);
+        return out;
     }
 
-    private List<String> ckanQueryJson(String resource, Map<String, String> jsonQ, String returnField) {
+    private List<String> ensureCities() {
+        List<String> snapshot = allCities;
+        if (snapshot != null) return snapshot;
+        synchronized (citiesLock) {
+            if (allCities != null) return allCities;
+            List<String> fetched = fetchAll(citiesResource, null, "שם_ישוב");
+            if (!fetched.isEmpty()) {
+                Collections.sort(fetched);
+                allCities = fetched;
+            } else {
+                // Don't memoize an empty list — let next call retry. gov.il may have been transient.
+                log.warn("places: cities fetch returned empty, will retry on next call");
+            }
+            return fetched;
+        }
+    }
+
+    private List<String> fetchStreetsForCity(String city) {
+        // Streets dataset uses English field names with Hebrew values, padded with whitespace.
+        // We use `q` as a JSON object (per-field LIKE) since `filters=` does exact match
+        // and trailing padding makes that fail.
+        Map<String, String> jsonQ = new LinkedHashMap<>();
+        jsonQ.put("city_name", city);
+        List<String> fetched = fetchAll(streetsResource, jsonQ, "street_name");
+        if (!fetched.isEmpty()) Collections.sort(fetched);
+        return fetched;
+    }
+
+    private List<String> fetchAll(String resource, Map<String, String> jsonQ, String returnField) {
         StringBuilder url = new StringBuilder(CKAN_BASE);
         url.append("?resource_id=").append(resource);
-        url.append("&limit=").append(FETCH_LIMIT);
-        try {
-            url.append("&q=").append(urlEnc(mapper.writeValueAsString(jsonQ)));
-        } catch (Exception e) {
-            log.warn("places: failed to serialize jsonQ: {}", e.toString());
-            return List.of();
+        url.append("&limit=").append(FULL_FETCH_LIMIT);
+        if (jsonQ != null && !jsonQ.isEmpty()) {
+            try {
+                url.append("&q=").append(urlEnc(mapper.writeValueAsString(jsonQ)));
+            } catch (Exception e) {
+                log.warn("places: failed to serialize jsonQ: {}", e.toString());
+                return List.of();
+            }
         }
-        return execAndExtract(url.toString(), returnField, resource, jsonQ.toString());
-    }
-
-    private List<String> execAndExtract(String url, String returnField, String resource, String qDesc) {
         try {
-            // URI.create() bypasses RestClient's URI-template expansion, which
-            // would otherwise decode-then-re-encode pre-encoded Hebrew query params
-            // and mangle them (also: would treat `{` in JSON-q params as templates).
-            String body = http.get().uri(URI.create(url)).retrieve().body(String.class);
+            // URI.create() bypasses RestClient's URI-template expansion, which would otherwise
+            // decode-then-re-encode pre-encoded Hebrew query params and mangle them
+            // (and would treat `{` from JSON-q payloads as template variables).
+            String body = http.get().uri(URI.create(url.toString())).retrieve().body(String.class);
             JsonNode root = mapper.readTree(body);
             JsonNode records = root.path("result").path("records");
             LinkedHashSet<String> seen = new LinkedHashSet<>();
@@ -131,7 +149,7 @@ public class PlacesService {
             }
             return new ArrayList<>(seen);
         } catch (Exception e) {
-            log.warn("places: ckan query failed resource={} q={}: {}", resource, qDesc, e.toString());
+            log.warn("places: ckan full fetch failed resource={} q={}: {}", resource, jsonQ, e.toString());
             return List.of();
         }
     }
