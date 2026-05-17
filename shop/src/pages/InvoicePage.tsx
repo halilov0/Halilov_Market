@@ -119,6 +119,9 @@ export function InvoicePage() {
 
         <section className="totals">
           <div className="row"><span>סך ביניים</span><span className="mono">{formatPrice(order.subtotalAgorot)}</span></div>
+          {order.discountAgorot > 0 && (
+            <div className="row"><span>הנחה{order.couponCode ? ` (${order.couponCode})` : ''}</span><span className="mono">-{formatPrice(order.discountAgorot)}</span></div>
+          )}
           <div className="row"><span>משלוח</span><span className="mono">{order.shippingAgorot === 0 ? 'חינם' : formatPrice(order.shippingAgorot)}</span></div>
           <div className="row faint"><span>{`מע"מ כלול (18%)`}</span><span className="mono">{formatPrice(order.vatAgorot)}</span></div>
           <div className="row sum"><span>סך הכל לתשלום</span><span className="mono">{formatPrice(order.totalAgorot)}</span></div>

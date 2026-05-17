@@ -72,6 +72,12 @@ export function OrderConfirmationPage() {
             <span>סך ביניים</span>
             <span className="mono" style={{ fontWeight: 700 }}>{formatPrice(order.subtotalAgorot)}</span>
           </div>
+          {order.discountAgorot > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13.5, color: 'var(--olive, #5d7a3a)' }}>
+              <span>הנחה{order.couponCode ? ` (${order.couponCode})` : ''}</span>
+              <span className="mono" style={{ fontWeight: 700 }}>-{formatPrice(order.discountAgorot)}</span>
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13.5 }}>
             <span>משלוח</span>
             <span className="mono" style={{ fontWeight: 700 }}>{formatPrice(order.shippingAgorot)}</span>

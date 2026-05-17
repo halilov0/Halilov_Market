@@ -51,6 +51,10 @@ public final class OrderEmailBuilder {
             + "</tr></thead><tbody>" + rows + "</tbody></table>"
             + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" dir=\"rtl\" style=\"border-collapse:collapse;margin-top:8px;direction:rtl\">"
             + summaryRow("סכום ביניים", money(order.getSubtotalAgorot()))
+            + (order.getDiscountAgorot() > 0
+                ? summaryRow("הנחה" + (order.getCouponCode() != null ? " (" + escape(order.getCouponCode()) + ")" : ""),
+                             "-" + money(order.getDiscountAgorot()))
+                : "")
             + summaryRow("משלוח", order.getShippingAgorot() == 0 ? "חינם" : money(order.getShippingAgorot()))
             + summaryRow("מע\"מ כלול", money(order.getVatAgorot()))
             + "<tr><td style=\"padding:12px 8px;border-top:2px solid #0f1014;font-weight:bold;font-size:16px;text-align:right\">סה\"כ</td>"

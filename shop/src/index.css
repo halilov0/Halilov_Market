@@ -1115,7 +1115,30 @@ input, textarea, select { font-family: inherit; }
   font-weight: 700; font-size: 12.5px;
   cursor: pointer;
 }
-.cls-summary .coupon-row button:hover { background: var(--surface); border-color: var(--ink); }
+.cls-summary .coupon-row button:hover:not(:disabled) { background: var(--surface); border-color: var(--ink); }
+.cls-summary .coupon-row button:disabled { color: var(--ink-4); cursor: not-allowed; }
+.cls-summary .coupon-row .applied {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.cls-summary .coupon-row .applied .tag {
+  font-family: var(--mono); font-weight: 700; font-size: 12.5px;
+  color: var(--ink); letter-spacing: 0.04em;
+}
+.cls-summary .coupon-row .applied .meta {
+  flex: 1; font-size: 11.5px; color: var(--ink-3);
+}
+.cls-summary .coupon-row .applied .rm {
+  background: transparent; border: none; padding: 4px;
+  color: var(--ink-3); cursor: pointer; line-height: 0;
+  border-radius: 999px;
+}
+.cls-summary .coupon-row .applied .rm:hover { color: var(--ink); background: #fff; }
+.cls-summary .coupon-row .err {
+  margin-top: 6px; font-size: 11.5px; color: var(--berry, #b03a3a);
+}
 
 /* ---- PDP ---- */
 .cls-pdp {
@@ -1768,6 +1791,43 @@ input, textarea, select { font-family: inherit; }
 .hm-input.mono { font-family: var(--mono); }
 textarea.hm-input { resize: vertical; min-height: 80px; }
 select.hm-input { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%); background-position: calc(0% + 14px) 50%, calc(0% + 20px) 50%; background-size: 6px 6px; background-repeat: no-repeat; padding-inline-start: 36px; }
+
+/* ---- Autocomplete dropdown ---- */
+.cls-ac-list {
+  position: absolute;
+  top: 100%;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  margin-top: 4px;
+  list-style: none;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  z-index: 30;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.cls-ac-list li {
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  font-size: 13.5px;
+  color: var(--ink);
+  cursor: pointer;
+  line-height: 1.3;
+}
+.cls-ac-list li.active,
+.cls-ac-list li:hover { background: var(--surface); }
+.cls-ac-loading {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: 12px;
+  transform: translateY(15%);
+  color: var(--ink-3);
+  font-size: 13px;
+  pointer-events: none;
+}
 
 /* ---- PRODUCT CARD (legacy) ---- */
 .hm-product {

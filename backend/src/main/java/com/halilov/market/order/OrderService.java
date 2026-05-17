@@ -2,6 +2,7 @@ package com.halilov.market.order;
 
 import com.halilov.market.catalog.Product;
 import com.halilov.market.catalog.ProductRepository;
+import com.halilov.market.coupon.CouponService;
 import com.halilov.market.notification.EmailMessage;
 import com.halilov.market.notification.EmailService;
 import com.halilov.market.notification.OrderEmailBuilder;
@@ -31,12 +32,14 @@ public class OrderService {
     private final AddressRepository addresses;
     private final ProductRepository products;
     private final UserRepository users;
+    private final CouponService couponService;
     private final EmailService emailService;
     private final String adminBcc;
     private final String siteBaseUrl;
 
     public OrderService(OrderRepository orders, AddressRepository addresses,
                         ProductRepository products, UserRepository users,
+                        CouponService couponService,
                         EmailService emailService,
                         @Value("${app.email.adminBcc:}") String adminBcc,
                         @Value("${app.email.siteBaseUrl:}") String siteBaseUrl) {
@@ -44,6 +47,7 @@ public class OrderService {
         this.addresses = addresses;
         this.products = products;
         this.users = users;
+        this.couponService = couponService;
         this.emailService = emailService;
         this.adminBcc = adminBcc;
         this.siteBaseUrl = siteBaseUrl;
@@ -100,9 +104,13 @@ public class OrderService {
             subtotal += lineTotal;
         }
 
-        int gross = subtotal + req.shippingAgorot();
+        var applied = couponService.resolveForOrder(req.couponCode(), subtotal).orElse(null);
+        int discount = applied != null ? applied.discountAgorot() : 0;
+        int gross = subtotal - discount + req.shippingAgorot();
         int vat = Math.round(gross * (float) VAT_RATE_PERCENT / (100 + VAT_RATE_PERCENT));
         order.setSubtotalAgorot(subtotal);
+        order.setDiscountAgorot(discount);
+        if (applied != null) order.setCouponCode(applied.code());
         order.setVatAgorot(vat);
         order.setTotalAgorot(gross);
         order.setOrderNumber(generateOrderNumber());
@@ -190,6 +198,13 @@ public class OrderService {
             ? addresses.findById(order.getShippingAddressId()).orElse(null) : null;
 
         if (old == OrderStatus.PENDING && newStatus == OrderStatus.PAID) {
+            if (order.getCouponCode() != null) {
+                try {
+                    couponService.incrementUsage(order.getCouponCode());
+                } catch (Exception e) {
+                    log.warn("failed to bump coupon usage for {}: {}", order.getOrderNumber(), e.toString());
+                }
+            }
             sendOrderPaidEmail(order, addr);
         }
 

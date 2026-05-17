@@ -62,8 +62,35 @@ export type ShippingView = {
 }
 export type OrderView = {
   orderNumber: string; status: OrderStatus
-  subtotalAgorot: number; shippingAgorot: number; vatAgorot: number; totalAgorot: number
+  subtotalAgorot: number; shippingAgorot: number; vatAgorot: number
+  discountAgorot: number; couponCode: string | null
+  totalAgorot: number
   items: OrderItemView[]; shipping: ShippingView | null; createdAt: string
+}
+
+export type CouponType = 'PERCENT' | 'FIXED'
+
+export type Coupon = {
+  id: number
+  code: string
+  type: CouponType
+  value: number
+  minSubtotalAgorot: number
+  maxUses: number | null
+  usedCount: number
+  expiresAt: string | null
+  active: boolean
+  createdAt: string
+}
+
+export type CouponUpsert = {
+  code: string
+  type: CouponType
+  value: number
+  minSubtotalAgorot: number
+  maxUses: number | null
+  expiresAt: string | null
+  active: boolean
 }
 
 export function formatPrice(agorot: number): string {

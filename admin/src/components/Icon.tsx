@@ -3,7 +3,7 @@ import type { ReactElement } from 'react'
 type IconName =
   | 'search' | 'plus' | 'minus' | 'chev' | 'chevDown' | 'check' | 'x'
   | 'dash' | 'orders' | 'box' | 'tag' | 'users' | 'megaphone' | 'chart' | 'cog'
-  | 'leaf' | 'truck' | 'arrow' | 'download' | 'upload' | 'edit' | 'trash'
+  | 'leaf' | 'truck' | 'arrow' | 'download' | 'upload' | 'edit' | 'trash' | 'percent'
 
 const PATHS: Record<IconName, ReactElement> = {
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" /></>,
@@ -28,6 +28,7 @@ const PATHS: Record<IconName, ReactElement> = {
   upload: <><path d="M12 20V8" /><path d="m7 13 5-5 5 5" /><path d="M5 4h14" /></>,
   edit:   <><path d="M4 20h4l11-11-4-4L4 16z" /></>,
   trash:  <><path d="M5 7h14" /><path d="M10 7V5a2 2 0 0 1 4 0v2" /><path d="M6 7v13h12V7" /><path d="M10 11v6M14 11v6" /></>,
+  percent: <><circle cx="7.5" cy="7.5" r="2.2" /><circle cx="16.5" cy="16.5" r="2.2" /><path d="M19 5 5 19" /></>,
 }
 
 export function Icon({ name, size = 18, stroke = 1.6 }: { name: IconName; size?: number; stroke?: number }) {

@@ -33,6 +33,12 @@ public class Order {
     @Column(name = "vat_agorot", nullable = false)
     private int vatAgorot;
 
+    @Column(name = "discount_agorot", nullable = false)
+    private int discountAgorot;
+
+    @Column(name = "coupon_code")
+    private String couponCode;
+
     @Column(name = "total_agorot", nullable = false)
     private int totalAgorot;
 
@@ -81,6 +87,10 @@ public class Order {
     public void setShippingAgorot(int shippingAgorot) { this.shippingAgorot = shippingAgorot; }
     public int getVatAgorot() { return vatAgorot; }
     public void setVatAgorot(int vatAgorot) { this.vatAgorot = vatAgorot; }
+    public int getDiscountAgorot() { return discountAgorot; }
+    public void setDiscountAgorot(int discountAgorot) { this.discountAgorot = discountAgorot; }
+    public String getCouponCode() { return couponCode; }
+    public void setCouponCode(String couponCode) { this.couponCode = couponCode; }
     public int getTotalAgorot() { return totalAgorot; }
     public void setTotalAgorot(int totalAgorot) { this.totalAgorot = totalAgorot; }
     public Long getShippingAddressId() { return shippingAddressId; }

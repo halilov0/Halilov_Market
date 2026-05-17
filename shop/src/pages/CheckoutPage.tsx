@@ -1,9 +1,10 @@
 import { useEffect, useState, Fragment } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { api, formatPrice, type CreateOrderRequest, type OrderView } from '../api'
+import { api, formatPrice, type CouponValidateResponse, type CreateOrderRequest, type OrderView } from '../api'
 import { useCart } from '../cart/cartStore'
 import { useAuth } from '../auth/authStore'
 import { Field } from '../components/Field'
+import { Autocomplete, fetchCities, fetchStreets } from '../components/Autocomplete'
 import { Icon } from '../components/Icon'
 import { Footer } from '../components/Footer'
 
@@ -30,6 +31,10 @@ export function CheckoutPage() {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [couponInput, setCouponInput] = useState('')
+  const [coupon, setCoupon] = useState<CouponValidateResponse | null>(null)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [applyingCoupon, setApplyingCoupon] = useState(false)
 
   useEffect(() => {
     if (!user) nav('/login?next=/checkout')
@@ -42,8 +47,47 @@ export function CheckoutPage() {
   if (!user || lines.length === 0) return null
 
   const subtotal = subtotalAgorot()
-  const total = subtotal + SHIPPING_AGOROT
+  const discount = coupon ? Math.min(coupon.discountAgorot, subtotal) : 0
+  const total = subtotal - discount + SHIPPING_AGOROT
   const vat = Math.round((total * 18) / 118)
+
+  // If cart changes after a coupon was applied, recompute / drop coupon if no longer valid.
+  useEffect(() => {
+    if (!coupon) return
+    if (subtotal === 0) { setCoupon(null); return }
+    // Re-validate against new subtotal in the background so the user sees fresh numbers.
+    api<CouponValidateResponse>('/api/coupons/validate', {
+      method: 'POST',
+      body: JSON.stringify({ code: coupon.code, subtotalAgorot: subtotal }),
+    }).then(setCoupon).catch(e => {
+      setCoupon(null)
+      setCouponError(e instanceof Error ? e.message : 'הקוד אינו תקף יותר')
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal])
+
+  async function applyCoupon() {
+    const code = couponInput.trim()
+    if (!code) return
+    setApplyingCoupon(true); setCouponError(null)
+    try {
+      const res = await api<CouponValidateResponse>('/api/coupons/validate', {
+        method: 'POST',
+        body: JSON.stringify({ code, subtotalAgorot: subtotal }),
+      })
+      setCoupon(res)
+      setCouponInput('')
+    } catch (e) {
+      setCoupon(null)
+      setCouponError(e instanceof Error ? e.message : 'קוד לא תקין')
+    } finally {
+      setApplyingCoupon(false)
+    }
+  }
+
+  function removeCoupon() {
+    setCoupon(null); setCouponError(null); setCouponInput('')
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -61,6 +105,7 @@ export function CheckoutPage() {
           notes: notes || undefined,
         },
         shippingAgorot: SHIPPING_AGOROT,
+        couponCode: coupon?.code,
       }
       const order = await api<OrderView>('/api/orders', {
         method: 'POST',
@@ -117,14 +162,30 @@ export function CheckoutPage() {
                   <Field label="שם מלא" required value={fullName} onChange={e => setFullName(e.target.value)} />
                   <Field label="טלפון" required mono value={phone} onChange={e => setPhone(e.target.value)} />
                 </div>
+                <div className="cls-row-21">
+                  <Autocomplete
+                    label="עיר"
+                    required
+                    value={city}
+                    onChange={setCity}
+                    fetchSuggestions={fetchCities}
+                    placeholder="התחל להקליד עיר…"
+                  />
+                  <Field label="מיקוד" mono value={postalCode} onChange={e => setPostalCode(e.target.value)} />
+                </div>
                 <div className="cls-row-3">
-                  <Field label="רחוב" required value={street} onChange={e => setStreet(e.target.value)} />
+                  <Autocomplete
+                    label="רחוב"
+                    required
+                    value={street}
+                    onChange={setStreet}
+                    fetchSuggestions={q => fetchStreets(city, q)}
+                    resetKey={city}
+                    disabled={!city.trim()}
+                    placeholder={city.trim() ? 'התחל להקליד רחוב…' : 'בחר/י עיר תחילה'}
+                  />
                   <Field label="מספר" value={houseNo} onChange={e => setHouseNo(e.target.value)} />
                   <Field label="דירה" value={apartment} onChange={e => setApartment(e.target.value)} />
-                </div>
-                <div className="cls-row-21">
-                  <Field label="עיר" required value={city} onChange={e => setCity(e.target.value)} />
-                  <Field label="מיקוד" mono value={postalCode} onChange={e => setPostalCode(e.target.value)} />
                 </div>
                 <Field
                   label="הערות לשליח"
@@ -160,10 +221,46 @@ export function CheckoutPage() {
                 ))}
               </div>
               <hr />
+              <div className="coupon-row">
+                <div className="lbl">קוד הנחה</div>
+                {coupon ? (
+                  <div className="applied">
+                    <span className="tag">{coupon.code}</span>
+                    <span className="meta">
+                      {coupon.type === 'PERCENT' ? `${coupon.value}% הנחה` : 'הנחה'}
+                    </span>
+                    <button type="button" className="rm" onClick={removeCoupon} aria-label="הסר קוד">
+                      <Icon name="x" size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="inputs">
+                    <input
+                      type="text"
+                      placeholder="הזן קוד"
+                      value={couponInput}
+                      onChange={e => { setCouponInput(e.target.value); setCouponError(null) }}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyCoupon() } }}
+                    />
+                    <button type="button" onClick={applyCoupon}
+                            disabled={applyingCoupon || !couponInput.trim()}>
+                      {applyingCoupon ? '…' : 'החל'}
+                    </button>
+                  </div>
+                )}
+                {couponError && <div className="err">{couponError}</div>}
+              </div>
+              <hr />
               <div className="row">
                 <span>סך ביניים</span>
                 <span className="v">{formatPrice(subtotal)}</span>
               </div>
+              {discount > 0 && (
+                <div className="row" style={{ color: 'var(--olive, #5d7a3a)' }}>
+                  <span>הנחה{coupon ? ` (${coupon.code})` : ''}</span>
+                  <span className="v">-{formatPrice(discount)}</span>
+                </div>
+              )}
               <div className="row">
                 <span>משלוח</span>
                 <span className="v">{formatPrice(SHIPPING_AGOROT)}</span>

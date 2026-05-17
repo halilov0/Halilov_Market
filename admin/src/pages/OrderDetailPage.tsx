@@ -159,6 +159,12 @@ export function OrderDetailPage() {
           </div>
           <div style={{ padding: '14px 22px', display: 'grid', gap: 6 }}>
             <Row k="סך ביניים" v={formatPrice(order.subtotalAgorot)} />
+            {order.discountAgorot > 0 && (
+              <Row
+                k={`הנחה${order.couponCode ? ` (${order.couponCode})` : ''}`}
+                v={`-${formatPrice(order.discountAgorot)}`}
+              />
+            )}
             <Row k="משלוח" v={formatPrice(order.shippingAgorot)} />
             <Row k='מע"מ (18%, כלול)' v={formatPrice(order.vatAgorot)} muted />
             <div style={{

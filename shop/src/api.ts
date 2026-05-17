@@ -102,6 +102,16 @@ export type CreateOrderRequest = {
   items: OrderItemRequest[]
   shipping: ShippingRequest
   shippingAgorot: number
+  couponCode?: string
+}
+
+export type CouponType = 'PERCENT' | 'FIXED'
+
+export type CouponValidateResponse = {
+  code: string
+  type: CouponType
+  value: number
+  discountAgorot: number
 }
 
 export type OrderItemView = {
@@ -130,6 +140,8 @@ export type OrderView = {
   subtotalAgorot: number
   shippingAgorot: number
   vatAgorot: number
+  discountAgorot: number
+  couponCode: string | null
   totalAgorot: number
   items: OrderItemView[]
   shipping: ShippingView | null

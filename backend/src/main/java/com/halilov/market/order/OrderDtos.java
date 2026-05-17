@@ -27,7 +27,8 @@ public class OrderDtos {
     public record CreateOrderRequest(
         @NotEmpty @Size(max = 50) @Valid List<OrderItemRequest> items,
         @Valid @NotNull ShippingRequest shipping,
-        @Min(0) int shippingAgorot
+        @Min(0) int shippingAgorot,
+        @Size(max = 64) String couponCode
     ) {}
 
     public record UpdateStatusRequest(@NotNull OrderStatus status) {}
@@ -59,13 +60,17 @@ public class OrderDtos {
 
     public record OrderView(
         String orderNumber, String status,
-        int subtotalAgorot, int shippingAgorot, int vatAgorot, int totalAgorot,
+        int subtotalAgorot, int shippingAgorot, int vatAgorot,
+        int discountAgorot, String couponCode,
+        int totalAgorot,
         List<OrderItemView> items, ShippingView shipping, Instant createdAt
     ) {
         static OrderView from(Order o, Address a) {
             return new OrderView(
                 o.getOrderNumber(), o.getStatus().name(),
-                o.getSubtotalAgorot(), o.getShippingAgorot(), o.getVatAgorot(), o.getTotalAgorot(),
+                o.getSubtotalAgorot(), o.getShippingAgorot(), o.getVatAgorot(),
+                o.getDiscountAgorot(), o.getCouponCode(),
+                o.getTotalAgorot(),
                 o.getItems().stream().map(OrderItemView::from).toList(),
                 ShippingView.from(a), o.getCreatedAt()
             );

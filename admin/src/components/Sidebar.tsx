@@ -10,6 +10,7 @@ const OPS_ITEMS: Item[] = [
   { to: '/orders', label: 'הזמנות', icon: 'orders' },
   { to: '/products', label: 'מוצרים', icon: 'box' },
   { to: '/categories', label: 'קטגוריות', icon: 'tag' },
+  { to: '/coupons', label: 'קופונים', icon: 'percent' },
 ]
 
 const GROWTH_LABELS: { label: string; icon: IconName }[] = [
