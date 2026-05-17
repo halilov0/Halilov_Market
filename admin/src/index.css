@@ -407,6 +407,29 @@ textarea.hm-input { resize: vertical; min-height: 70px; }
 }
 .adm-bars .bar.peak .fill { background: var(--terracotta); }
 
+.adm-status-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.adm-status-row .lbl { color: var(--ink-2); }
+.adm-status-row .cnt { font-weight: 700; color: var(--ink); }
+
+.adm-rank {
+  display: inline-grid; place-items: center;
+  width: 22px; height: 22px;
+  background: var(--paper-2);
+  border-radius: 50%;
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 700;
+  color: var(--ink-3);
+  margin-inline-end: 8px;
+  vertical-align: middle;
+}
+
 /* ---- toast ---- */
 .hm-toast-wrap {
   position: fixed;

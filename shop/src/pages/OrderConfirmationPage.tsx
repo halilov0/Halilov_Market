@@ -24,17 +24,24 @@ export function OrderConfirmationPage() {
 
   const greetingName = user?.fullName?.split(' ')[0] ?? ''
   const statusLower = order.status.toLowerCase()
+  const isCancelled = order.status === 'CANCELLED'
 
   return (
     <>
       <div className="cls-page-narrow">
-        <div className="cls-confirm-hero">
-          <div className="check"><Icon name="check" size={32} stroke={2.6} /></div>
-          <div className="eyebrow">הזמנה התקבלה</div>
-          <h1>תודה{greetingName ? `, ${greetingName}` : ''}!</h1>
+        <div className={`cls-confirm-hero${isCancelled ? ' cancelled' : ''}`}>
+          <div className="check">
+            <Icon name={isCancelled ? 'x' : 'check'} size={32} stroke={2.6} />
+          </div>
+          <div className="eyebrow">{isCancelled ? 'ההזמנה בוטלה' : 'הזמנה התקבלה'}</div>
+          <h1>{isCancelled
+            ? 'ההזמנה בוטלה'
+            : `תודה${greetingName ? `, ${greetingName}` : ''}!`}</h1>
           <p>
             הזמנה <span className="mono" style={{ color: 'var(--ink)', fontWeight: 700 }}>#{order.orderNumber}</span>
-            {user && <> · נשלח אישור אל {user.email}</>}
+            {isCancelled
+              ? <> · החיוב לא בוצע. ניתן לחזור לקטלוג ולנסות שוב.</>
+              : (user && <> · נשלח אישור אל {user.email}</>)}
           </p>
         </div>
 
@@ -82,10 +89,6 @@ export function OrderConfirmationPage() {
             <span>משלוח</span>
             <span className="mono" style={{ fontWeight: 700 }}>{formatPrice(order.shippingAgorot)}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 12.5, color: 'var(--ink-3)' }}>
-            <span>מע"מ (18%, כלול)</span>
-            <span className="mono" style={{ fontWeight: 600 }}>{formatPrice(order.vatAgorot)}</span>
-          </div>
           <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '10px 0' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 6 }}>
             <strong style={{ fontSize: 15 }}>סך הכל</strong>
@@ -109,17 +112,19 @@ export function OrderConfirmationPage() {
                 )}
               </div>
             </div>
-            <button
-              onClick={() => nav(`/track?orderNumber=${encodeURIComponent(order.orderNumber)}`)}
-              style={{
-                background: '#fff', border: '1px solid var(--line-2)',
-                borderRadius: 'var(--r-md)', padding: '9px 16px',
-                fontWeight: 700, fontSize: 12.5, cursor: 'pointer',
-                color: 'var(--ink)',
-              }}
-            >
-              עקוב
-            </button>
+            {!isCancelled && (
+              <button
+                onClick={() => nav(`/track?orderNumber=${encodeURIComponent(order.orderNumber)}`)}
+                style={{
+                  background: '#fff', border: '1px solid var(--line-2)',
+                  borderRadius: 'var(--r-md)', padding: '9px 16px',
+                  fontWeight: 700, fontSize: 12.5, cursor: 'pointer',
+                  color: 'var(--ink)',
+                }}
+              >
+                עקוב
+              </button>
+            )}
           </div>
         )}
 

@@ -153,14 +153,15 @@ export function Autocomplete({
 }
 
 // Convenience fetchers wired to the backend places API.
+// Limit 2000 covers full Israel cities list (~1300) + Tel Aviv streets max (~3000 after dedupe ≪ that).
 export async function fetchCities(q: string): Promise<string[]> {
-  const params = new URLSearchParams({ limit: '50' })
+  const params = new URLSearchParams({ limit: '2000' })
   if (q) params.set('q', q)
   return api<string[]>(`/api/places/cities?${params.toString()}`)
 }
 
 export async function fetchStreets(city: string, q: string): Promise<string[]> {
-  const params = new URLSearchParams({ city, limit: '50' })
+  const params = new URLSearchParams({ city, limit: '2000' })
   if (q) params.set('q', q)
   return api<string[]>(`/api/places/streets?${params.toString()}`)
 }

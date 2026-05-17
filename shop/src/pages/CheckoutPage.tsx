@@ -16,34 +16,26 @@ const STEPS = [
   ['3', 'אישור'],
 ] as const
 
-type Errors = Partial<Record<
-  'fullName' | 'phone' | 'city' | 'street' | 'houseNo' | 'postalCode',
-  string
->>
+// Israeli mobile prefixes only — couriers need a phone they can reach in the field.
+const PHONE_PREFIXES = ['050', '051', '052', '053', '054', '055', '058'] as const
 
-// Strip everything that isn't a digit, then check Israeli mobile/landline pattern.
-// Mobile: 05X (10 digits), Landline: 02/03/04/08/09/07X (9-10 digits).
-function validatePhone(raw: string): string | null {
-  const digits = raw.replace(/\D+/g, '')
-  if (!digits) return 'נדרש מספר טלפון'
-  if (!/^0[2-9]\d{7,8}$/.test(digits)) return 'מספר טלפון לא תקין'
-  return null
-}
+type ErrorKey = 'fullName' | 'phone' | 'city' | 'street' | 'houseNo' | 'postalCode'
+type Errors = Partial<Record<ErrorKey, string>>
 
-function validateField(name: keyof Errors, value: string): string | null {
-  const v = value.trim()
-  switch (name) {
-    case 'fullName':   return v.length < 2 ? 'נדרש שם מלא' : null
-    case 'phone':      return validatePhone(v)
-    case 'city':       return v ? null : 'נדרשת עיר'
-    case 'street':     return v ? null : 'נדרש רחוב'
-    case 'houseNo':    return v ? null : 'נדרש מספר בית'
-    case 'postalCode': {
-      if (!v) return null // optional
-      const digits = v.replace(/\D+/g, '')
-      return /^(\d{5}|\d{7})$/.test(digits) ? null : 'מיקוד 5 או 7 ספרות'
+// House number: digits, optionally followed by one Hebrew/Latin letter (e.g. "10א", "7B").
+const HOUSE_NO_RE = /^\d+[א-תa-zA-Z]?$/
+const PHONE_NUMBER_RE = /^\d{7}$/
+
+// Try to infer prefix + 7-digit local number from any pre-existing user.phone value.
+function splitPhone(raw: string): { prefix: string; number: string } {
+  const digits = (raw || '').replace(/\D+/g, '')
+  for (const p of PHONE_PREFIXES) {
+    if (digits.startsWith(p)) {
+      const rest = digits.slice(p.length)
+      if (rest.length === 7) return { prefix: p, number: rest }
     }
   }
+  return { prefix: '050', number: '' }
 }
 
 export function CheckoutPage() {
@@ -51,8 +43,10 @@ export function CheckoutPage() {
   const { user } = useAuth()
   const nav = useNavigate()
 
+  const seeded = splitPhone(user?.phone ?? '')
   const [fullName, setFullName] = useState(user?.fullName ?? '')
-  const [phone, setPhone] = useState(user?.phone ?? '')
+  const [phonePrefix, setPhonePrefix] = useState<string>(seeded.prefix)
+  const [phoneNumber, setPhoneNumber] = useState<string>(seeded.number)
   const [street, setStreet] = useState('')
   const [houseNo, setHouseNo] = useState('')
   const [apartment, setApartment] = useState('')
@@ -62,19 +56,23 @@ export function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [errors, setErrors] = useState<Errors>({})
-  const [touched, setTouched] = useState<Partial<Record<keyof Errors, boolean>>>({})
+  const [touched, setTouched] = useState<Partial<Record<ErrorKey, boolean>>>({})
   const [couponInput, setCouponInput] = useState('')
   const [coupon, setCoupon] = useState<CouponValidateResponse | null>(null)
   const [couponError, setCouponError] = useState<string | null>(null)
   const [applyingCoupon, setApplyingCoupon] = useState(false)
 
+  // Loaded lookup sets for validation. Empty = not yet loaded (don't block submit on those).
+  const [allCities, setAllCities] = useState<Set<string>>(new Set())
+  const [streetsForCity, setStreetsForCity] = useState<Set<string>>(new Set())
+
   useEffect(() => {
     if (!user) nav('/login?next=/checkout')
   }, [user, nav])
 
-  // Mount-only guard: if user lands on /checkout with an empty cart, bounce to /cart.
-  // After mount we DON'T re-bounce — otherwise clearing the cart at submit time
-  // races with the nav-to-payment and the SPA renders a white page until refresh.
+  // Mount-only guard: bounce to /cart if user lands empty. AFTER mount we ignore
+  // lines becoming 0 — otherwise clearing the cart on submit races with the
+  // payment redirect and the SPA shows a white frame until refresh.
   const emptyCartChecked = useRef(false)
   useEffect(() => {
     if (emptyCartChecked.current) return
@@ -82,14 +80,28 @@ export function CheckoutPage() {
     if (lines.length === 0) nav('/cart')
   }, [lines.length, nav])
 
+  // Prefetch the full cities list once for validation + dropdown browse.
+  useEffect(() => {
+    fetchCities('').then(list => setAllCities(new Set(list))).catch(() => { /* tolerate */ })
+  }, [])
+
+  // Refetch street list whenever city changes (and is a real selected city).
+  useEffect(() => {
+    const c = city.trim()
+    if (!c) { setStreetsForCity(new Set()); return }
+    let cancelled = false
+    fetchStreets(c, '').then(list => {
+      if (!cancelled) setStreetsForCity(new Set(list))
+    }).catch(() => { if (!cancelled) setStreetsForCity(new Set()) })
+    return () => { cancelled = true }
+  }, [city])
+
   if (!user || (lines.length === 0 && !submitting)) return null
 
   const subtotal = subtotalAgorot()
   const discount = coupon ? Math.min(coupon.discountAgorot, subtotal) : 0
   const total = subtotal - discount + SHIPPING_AGOROT
-  const vat = Math.round((total * 18) / 118)
 
-  // If cart changes after a coupon was applied, recompute / drop coupon if no longer valid.
   useEffect(() => {
     if (!coupon) return
     if (subtotal === 0) { setCoupon(null); return }
@@ -126,25 +138,49 @@ export function CheckoutPage() {
     setCoupon(null); setCouponError(null); setCouponInput('')
   }
 
-  function markBlur(name: keyof Errors, value: string) {
-    setTouched(t => ({ ...t, [name]: true }))
-    setErrors(e => ({ ...e, [name]: validateField(name, value) }))
+  function validate(name: ErrorKey, value: string): string | null {
+    const v = value.trim()
+    switch (name) {
+      case 'fullName':   return v.length < 2 ? 'נדרש שם מלא' : null
+      case 'phone':      return PHONE_NUMBER_RE.test(phoneNumber) ? null : 'מספר טלפון - 7 ספרות'
+      case 'city': {
+        if (!v) return 'נדרשת עיר'
+        if (allCities.size > 0 && !allCities.has(v)) return 'בחרו עיר מהרשימה'
+        return null
+      }
+      case 'street': {
+        if (!v) return 'נדרש רחוב'
+        if (streetsForCity.size > 0 && !streetsForCity.has(v)) return 'בחרו רחוב מהרשימה'
+        return null
+      }
+      case 'houseNo':    return HOUSE_NO_RE.test(v) ? null : 'מספר בית לא תקין'
+      case 'postalCode': {
+        if (!v) return null
+        const digits = v.replace(/\D+/g, '')
+        return /^(\d{5}|\d{7})$/.test(digits) ? null : 'מיקוד 5 או 7 ספרות'
+      }
+    }
   }
 
-  function patchOnChange<T extends keyof Errors>(name: T, value: string) {
+  function markBlur(name: ErrorKey, value: string) {
+    setTouched(t => ({ ...t, [name]: true }))
+    setErrors(e => ({ ...e, [name]: validate(name, value) ?? undefined }))
+  }
+
+  function patchOnChange(name: ErrorKey, value: string) {
     if (touched[name]) {
-      setErrors(e => ({ ...e, [name]: validateField(name, value) }))
+      setErrors(e => ({ ...e, [name]: validate(name, value) ?? undefined }))
     }
   }
 
   function validateAll(): Errors {
     return {
-      fullName:   validateField('fullName',   fullName)   ?? undefined,
-      phone:      validateField('phone',      phone)      ?? undefined,
-      city:       validateField('city',       city)       ?? undefined,
-      street:     validateField('street',     street)     ?? undefined,
-      houseNo:    validateField('houseNo',    houseNo)    ?? undefined,
-      postalCode: validateField('postalCode', postalCode) ?? undefined,
+      fullName:   validate('fullName',   fullName)         ?? undefined,
+      phone:      validate('phone',      phoneNumber)      ?? undefined,
+      city:       validate('city',       city)             ?? undefined,
+      street:     validate('street',     street)           ?? undefined,
+      houseNo:    validate('houseNo',    houseNo)          ?? undefined,
+      postalCode: validate('postalCode', postalCode)       ?? undefined,
     }
   }
 
@@ -166,11 +202,12 @@ export function CheckoutPage() {
 
     setSubmitting(true)
     try {
+      const fullPhone = phonePrefix + phoneNumber
       const body: CreateOrderRequest = {
         items: lines.map(l => ({ productId: l.productId, quantity: l.quantity })),
         shipping: {
           fullName,
-          phone: phone.replace(/\D+/g, ''),
+          phone: fullPhone,
           street,
           houseNo,
           apartment: apartment || undefined,
@@ -189,14 +226,11 @@ export function CheckoutPage() {
         `/api/orders/${order.orderNumber}/pay`,
         { method: 'POST' }
       )
-      // Clear cart AFTER nav so the empty-cart guard (even mount-only) and any
-      // other cart-derived UI doesn't flicker on the way out.
       if (pay.redirectUrl.startsWith('http://') || pay.redirectUrl.startsWith('https://')) {
         clear()
         window.location.href = pay.redirectUrl
       } else {
         nav(pay.redirectUrl)
-        // Tiny defer so React Router commits the route transition before the cart store mutates.
         setTimeout(clear, 50)
       }
     } catch (e) {
@@ -242,14 +276,35 @@ export function CheckoutPage() {
                     onBlur={() => markBlur('fullName', fullName)}
                     error={errors.fullName}
                   />
-                  <Field
-                    label="טלפון" required mono value={phone}
-                    placeholder="050-1234567"
-                    inputMode="tel"
-                    onChange={e => { setPhone(e.target.value); patchOnChange('phone', e.target.value) }}
-                    onBlur={() => markBlur('phone', phone)}
-                    error={errors.phone}
-                  />
+                  <div className="hm-field">
+                    <label>טלפון</label>
+                    <div className="cls-phone-group">
+                      <select
+                        className={`hm-input mono ${errors.phone ? 'has-error' : ''}`}
+                        value={phonePrefix}
+                        onChange={e => setPhonePrefix(e.target.value)}
+                        aria-label="קידומת"
+                      >
+                        {PHONE_PREFIXES.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                      <input
+                        className={`hm-input mono ${errors.phone ? 'has-error' : ''}`}
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="1234567"
+                        maxLength={7}
+                        value={phoneNumber}
+                        onChange={e => {
+                          const digits = e.target.value.replace(/\D+/g, '').slice(0, 7)
+                          setPhoneNumber(digits)
+                          patchOnChange('phone', digits)
+                        }}
+                        onBlur={() => markBlur('phone', phoneNumber)}
+                        required
+                      />
+                    </div>
+                    {errors.phone && <div className="cls-field-err">{errors.phone}</div>}
+                  </div>
                 </div>
                 <div className="cls-row-21">
                   <Autocomplete
@@ -285,8 +340,9 @@ export function CheckoutPage() {
                     error={errors.street}
                   />
                   <Field
-                    label="מספר" required value={houseNo}
-                    inputMode="numeric"
+                    label="מספר" required mono value={houseNo}
+                    inputMode="text"
+                    placeholder="10 או 10א"
                     onChange={e => { setHouseNo(e.target.value); patchOnChange('houseNo', e.target.value) }}
                     onBlur={() => markBlur('houseNo', houseNo)}
                     error={errors.houseNo}
@@ -370,10 +426,6 @@ export function CheckoutPage() {
               <div className="row">
                 <span>משלוח</span>
                 <span className="v">{formatPrice(SHIPPING_AGOROT)}</span>
-              </div>
-              <div className="row muted">
-                <span>מע"מ (18%, כלול)</span>
-                <span className="v">{formatPrice(vat)}</span>
               </div>
               <hr />
               <div className="total-row">

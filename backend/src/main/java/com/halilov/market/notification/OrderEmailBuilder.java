@@ -56,7 +56,6 @@ public final class OrderEmailBuilder {
                              "-" + money(order.getDiscountAgorot()))
                 : "")
             + summaryRow("משלוח", order.getShippingAgorot() == 0 ? "חינם" : money(order.getShippingAgorot()))
-            + summaryRow("מע\"מ כלול", money(order.getVatAgorot()))
             + "<tr><td style=\"padding:12px 8px;border-top:2px solid #0f1014;font-weight:bold;font-size:16px;text-align:right\">סה\"כ</td>"
             + "<td style=\"padding:12px 8px;border-top:2px solid #0f1014;font-weight:bold;font-size:16px;text-align:left;font-family:monospace\">" + money(order.getTotalAgorot()) + "</td></tr>"
             + "</table>"

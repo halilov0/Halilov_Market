@@ -100,3 +100,29 @@ export function formatPrice(agorot: number): string {
 export const ORDER_STATUSES: OrderStatus[] = [
   'PENDING', 'PAID', 'FULFILLED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'
 ]
+
+export type DashboardMetrics = {
+  kpi: {
+    revenueTodayAgorot: number
+    revenueLast7Agorot: number
+    revenueLast30Agorot: number
+    revenueLifetimeAgorot: number
+    ordersTodayCount: number
+    ordersLifetimeCount: number
+    paidOrdersLifetimeCount: number
+    aovAgorot: number
+  }
+  statusCounts: Record<OrderStatus, number>
+  dailyRevenue: { date: string; revenueAgorot: number; orderCount: number }[]
+  topProducts: { productId: number; nameHe: string; sku: string; qtySold: number; revenueAgorot: number }[]
+  lowStock: { id: number; nameHe: string; sku: string; stockQty: number }[]
+  recentOrders: {
+    orderNumber: string
+    status: OrderStatus
+    totalAgorot: number
+    createdAt: string
+    customerName: string | null
+    city: string | null
+    itemCount: number
+  }[]
+}

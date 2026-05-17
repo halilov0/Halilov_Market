@@ -14,7 +14,6 @@ export function CartPage() {
   const subtotal = subtotalAgorot()
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_AGOROT
   const total = subtotal + shipping
-  const vat = Math.round((total * 18) / 118)
   const toFree = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal)
   const totalItems = lines.reduce((s, l) => s + l.quantity, 0)
 
@@ -115,10 +114,6 @@ export function CartPage() {
             <div className="row">
               <span>משלוח</span>
               <span className="v">{shipping === 0 ? 'חינם' : formatPrice(shipping)}</span>
-            </div>
-            <div className="row muted">
-              <span>מע"מ (18%, כלול)</span>
-              <span className="v">{formatPrice(vat)}</span>
             </div>
             <hr />
             <div className="total-row">

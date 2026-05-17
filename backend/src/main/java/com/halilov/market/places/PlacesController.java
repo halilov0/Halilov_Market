@@ -19,7 +19,7 @@ public class PlacesController {
         @RequestParam(name = "q", required = false) String q,
         @RequestParam(name = "limit", defaultValue = "10") int limit
     ) {
-        return places.searchCities(q, Math.min(Math.max(limit, 1), 25));
+        return places.searchCities(q, Math.min(Math.max(limit, 1), 2000));
     }
 
     @GetMapping("/streets")
@@ -28,6 +28,6 @@ public class PlacesController {
         @RequestParam(name = "q", required = false) String q,
         @RequestParam(name = "limit", defaultValue = "10") int limit
     ) {
-        return places.searchStreets(city, q, Math.min(Math.max(limit, 1), 25));
+        return places.searchStreets(city, q, Math.min(Math.max(limit, 1), 2000));
     }
 }

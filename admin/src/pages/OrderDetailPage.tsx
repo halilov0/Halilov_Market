@@ -166,7 +166,6 @@ export function OrderDetailPage() {
               />
             )}
             <Row k="משלוח" v={formatPrice(order.shippingAgorot)} />
-            <Row k='מע"מ (18%, כלול)' v={formatPrice(order.vatAgorot)} muted />
             <div style={{
               display: 'flex', justifyContent: 'space-between', marginTop: 6,
               paddingTop: 10, borderTop: '1px solid var(--line)',

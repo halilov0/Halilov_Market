@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -114,13 +115,46 @@ public class PlacesService {
 
     private List<String> fetchStreetsForCity(String city) {
         // Streets dataset uses English field names with Hebrew values, padded with whitespace.
-        // We use `q` as a JSON object (per-field LIKE) since `filters=` does exact match
-        // and trailing padding makes that fail.
+        // `q` as a JSON object does per-field LIKE; `filters=` does exact match and the data
+        // has trailing-space padding, so filters fail.
+        //
+        // Dedupe: a single physical street has many records — one official entry plus
+        // multiple synonyms (e.g. "רוטשילד" + "שד רוטשילד" + "שדרות רוטשילד" all share
+        // `official_code`). Group by `official_code`, keep the entry where
+        // `street_name_status` starts with "official" so the canonical name wins.
         Map<String, String> jsonQ = new LinkedHashMap<>();
         jsonQ.put("city_name", city);
-        List<String> fetched = fetchAll(streetsResource, jsonQ, "street_name");
-        if (!fetched.isEmpty()) Collections.sort(fetched);
-        return fetched;
+        StringBuilder url = new StringBuilder(CKAN_BASE)
+            .append("?resource_id=").append(streetsResource)
+            .append("&limit=").append(FULL_FETCH_LIMIT);
+        try {
+            url.append("&q=").append(urlEnc(mapper.writeValueAsString(jsonQ)));
+        } catch (Exception e) {
+            log.warn("places: failed to serialize jsonQ for streets: {}", e.toString());
+            return List.of();
+        }
+        try {
+            String body = http.get().uri(URI.create(url.toString())).retrieve().body(String.class);
+            JsonNode records = mapper.readTree(body).path("result").path("records");
+            Map<String, String> byCode = new LinkedHashMap<>();
+            Map<String, Boolean> isOfficialChosen = new LinkedHashMap<>();
+            for (JsonNode rec : records) {
+                String name = rec.path("street_name").asText("").trim();
+                String code = rec.path("official_code").asText("").trim();
+                if (name.isEmpty() || code.isEmpty()) continue;
+                boolean official = rec.path("street_name_status").asText("").trim().startsWith("official");
+                Boolean haveOfficial = isOfficialChosen.get(code);
+                if (haveOfficial == null || (official && !haveOfficial)) {
+                    byCode.put(code, name);
+                    isOfficialChosen.put(code, official);
+                }
+            }
+            // TreeSet sorts + collapses any cross-street display-name collisions.
+            return new ArrayList<>(new TreeSet<>(byCode.values()));
+        } catch (Exception e) {
+            log.warn("places: streets fetch failed for {}: {}", city, e.toString());
+            return List.of();
+        }
     }
 
     private List<String> fetchAll(String resource, Map<String, String> jsonQ, String returnField) {
