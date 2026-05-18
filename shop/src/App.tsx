@@ -15,6 +15,7 @@ import { TrackOrderPage } from './pages/TrackOrderPage'
 import { InvoicePage } from './pages/InvoicePage'
 import { InfoPage } from './pages/InfoPage'
 import { FavoritesPage } from './pages/FavoritesPage'
+import { AccountPage } from './pages/AccountPage'
 import { useAuth } from './auth/authStore'
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
         <Route path="/terms"    element={<InfoPage slug="terms" />} />
         <Route path="/privacy"  element={<InfoPage slug="privacy" />} />
         <Route path="/favorites" element={<FavoritesPage />} />
+        <Route path="/account" element={<AccountPage />} />
         <Route path="*" element={<div className="hm-page"><h1>404</h1></div>} />
       </Routes>
       {!hideHeader && <WhatsAppFab />}

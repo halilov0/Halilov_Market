@@ -99,18 +99,13 @@ export function Header() {
 
           <div className="cls-header-actions">
             {user ? (
-              <button
-                className="cls-icon-btn"
-                type="button"
-                onClick={() => { logout(); nav('/') }}
-                title="התנתקות"
-              >
+              <Link to="/account" className="cls-icon-btn" onClick={close} title="החשבון שלי">
                 <Icon name="user" size={20} />
                 <span className="label">
                   <span className="top">{greeting}</span>
-                  <span className="bot">התנתקות</span>
+                  <span className="bot">החשבון שלי</span>
                 </span>
-              </button>
+              </Link>
             ) : (
               <Link to="/login" className="cls-icon-btn" onClick={close} title="התחברות">
                 <Icon name="user" size={20} />
@@ -163,9 +158,12 @@ export function Header() {
           <a onClick={() => { comingSoon('חדש בקטלוג'); close() }}>חדש בקטלוג</a>
           <Link to="/favorites" onClick={close}>מועדפים</Link>
           {user ? (
-            <a onClick={() => { logout(); nav('/'); close() }} style={{ color: 'var(--accent)' }}>
-              התנתקות
-            </a>
+            <>
+              <Link to="/account" onClick={close}>החשבון שלי</Link>
+              <a onClick={() => { logout(); nav('/'); close() }} style={{ color: 'var(--accent)' }}>
+                התנתקות
+              </a>
+            </>
           ) : (
             <>
               <Link to="/login" onClick={close}>התחברות</Link>

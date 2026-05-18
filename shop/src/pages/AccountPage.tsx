@@ -1,0 +1,448 @@
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { api, type SavedAddress, type SavedAddressUpsert } from '../api'
+import { useAuth } from '../auth/authStore'
+import { Field } from '../components/Field'
+import { Autocomplete, fetchCities, fetchStreets } from '../components/Autocomplete'
+import { Footer } from '../components/Footer'
+import { Icon } from '../components/Icon'
+import { useToast } from '../components/Toast'
+
+const PHONE_PREFIXES = ['050', '051', '052', '053', '054', '055', '058'] as const
+const HOUSE_NO_RE = /^\d+[א-תa-zA-Z]?$/
+const PHONE_NUMBER_RE = /^\d{7}$/
+
+function splitPhone(raw: string): { prefix: string; number: string } {
+  const digits = (raw || '').replace(/\D+/g, '')
+  for (const p of PHONE_PREFIXES) {
+    if (digits.startsWith(p)) {
+      const rest = digits.slice(p.length)
+      if (rest.length === 7) return { prefix: p, number: rest }
+    }
+  }
+  return { prefix: '050', number: '' }
+}
+
+type Tab = 'profile' | 'addresses'
+
+export function AccountPage() {
+  const { user, fetchMe, logout } = useAuth()
+  const nav = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab: Tab = (searchParams.get('tab') as Tab) === 'addresses' ? 'addresses' : 'profile'
+
+  useEffect(() => { if (!user) nav('/login?next=/account') }, [user, nav])
+  if (!user) return null
+
+  return (
+    <>
+      <div className="hm-account-page">
+        <div className="head">
+          <div className="eyebrow">החשבון שלי</div>
+          <h1>שלום, {user.fullName.split(' ')[0]}</h1>
+        </div>
+
+        <div className="account-grid">
+          <aside className="side-nav">
+            <button
+              className={tab === 'profile' ? 'active' : ''}
+              onClick={() => setSearchParams({ tab: 'profile' })}
+            >
+              <Icon name="user" size={16} />
+              פרטים אישיים
+            </button>
+            <button
+              className={tab === 'addresses' ? 'active' : ''}
+              onClick={() => setSearchParams({ tab: 'addresses' })}
+            >
+              <Icon name="pin" size={16} />
+              כתובות שמורות
+            </button>
+            <Link to="/favorites">
+              <Icon name="heart" size={16} />
+              מועדפים
+            </Link>
+            <Link to="/track">
+              <Icon name="truck" size={16} />
+              מעקב הזמנה
+            </Link>
+            <button className="logout" onClick={() => { logout(); nav('/') }}>
+              <Icon name="arrow" size={16} />
+              התנתקות
+            </button>
+          </aside>
+
+          <section className="account-panel">
+            {tab === 'profile' ? <ProfileTab onSaved={fetchMe} /> : <AddressesTab />}
+          </section>
+        </div>
+      </div>
+      <Footer />
+    </>
+  )
+}
+
+function ProfileTab({ onSaved }: { onSaved: () => void | Promise<void> }) {
+  const { user } = useAuth()
+  const pushToast = useToast(s => s.push)
+  const seeded = splitPhone(user?.phone ?? '')
+  const [fullName, setFullName] = useState(user?.fullName ?? '')
+  const [phonePrefix, setPhonePrefix] = useState<string>(seeded.prefix)
+  const [phoneNumber, setPhoneNumber] = useState<string>(seeded.number)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (fullName.trim().length < 2) { setError('נדרש שם מלא'); return }
+    if (phoneNumber && !PHONE_NUMBER_RE.test(phoneNumber)) {
+      setError('מספר טלפון - 7 ספרות'); return
+    }
+    setSaving(true)
+    try {
+      await api('/api/me/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          phone: phoneNumber ? phonePrefix + phoneNumber : '',
+        }),
+      })
+      await onSaved()
+      pushToast('הפרטים נשמרו')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="account-form">
+      <h2>פרטים אישיים</h2>
+      <p className="hint">השם והטלפון משמשים כברירת מחדל בקופה.</p>
+
+      <div className="cls-row-2">
+        <Field
+          label="שם מלא"
+          required
+          value={fullName}
+          onChange={e => setFullName(e.target.value)}
+        />
+        <div className="hm-field">
+          <label>טלפון</label>
+          <div className="cls-phone-group">
+            <select
+              className="hm-input mono"
+              value={phonePrefix}
+              onChange={e => setPhonePrefix(e.target.value)}
+              aria-label="קידומת"
+            >
+              {PHONE_PREFIXES.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <input
+              className="hm-input mono"
+              type="tel"
+              inputMode="numeric"
+              placeholder="1234567"
+              maxLength={7}
+              value={phoneNumber}
+              onChange={e => setPhoneNumber(e.target.value.replace(/\D+/g, '').slice(0, 7))}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="hm-field">
+        <label>אימייל</label>
+        <input className="hm-input" type="email" value={user?.email ?? ''} disabled />
+        <div className="cls-field-hint">לא ניתן לשנות. צריך להחליף? פנו אלינו.</div>
+      </div>
+
+      {error && <div className="hm-error" style={{ marginTop: 12 }}>{error}</div>}
+
+      <div className="actions">
+        <button type="submit" className="hm-btn-primary" disabled={saving}>
+          {saving ? 'שומר…' : 'שמירה'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function AddressesTab() {
+  const pushToast = useToast(s => s.push)
+  const [addresses, setAddresses] = useState<SavedAddress[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState<SavedAddress | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function load() {
+    setLoading(true)
+    api<SavedAddress[]>('/api/me/addresses')
+      .then(setAddresses)
+      .catch(e => setError(e instanceof Error ? e.message : 'שגיאה'))
+      .finally(() => setLoading(false))
+  }
+  useEffect(load, [])
+
+  async function setDefault(id: number) {
+    try {
+      await api(`/api/me/addresses/${id}/default`, { method: 'POST' })
+      load()
+      pushToast('עודכן כברירת מחדל')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה')
+    }
+  }
+
+  async function remove(a: SavedAddress) {
+    if (!confirm(`למחוק את הכתובת "${a.label || a.street}"?`)) return
+    try {
+      await api(`/api/me/addresses/${a.id}`, { method: 'DELETE' })
+      load()
+      pushToast('הכתובת נמחקה')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה')
+    }
+  }
+
+  if (editing || creating) {
+    return (
+      <AddressForm
+        initial={editing}
+        onCancel={() => { setEditing(null); setCreating(false); setError(null) }}
+        onSaved={(msg) => {
+          setEditing(null); setCreating(false); setError(null)
+          load()
+          pushToast(msg)
+        }}
+      />
+    )
+  }
+
+  return (
+    <div className="account-form">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <h2 style={{ margin: 0 }}>כתובות שמורות</h2>
+        <button type="button" className="hm-btn-primary" onClick={() => setCreating(true)}>
+          + הוספת כתובת
+        </button>
+      </div>
+      <p className="hint">בקופה תוכלו לבחור מהכתובות השמורות במקום למלא הכל מחדש.</p>
+
+      {error && <div className="hm-error" style={{ marginTop: 12 }}>{error}</div>}
+
+      {loading ? (
+        <p style={{ color: 'var(--ink-3)', marginTop: 16 }}>טוען…</p>
+      ) : addresses.length === 0 ? (
+        <div className="addr-empty">
+          <div className="ico"><Icon name="pin" size={22} /></div>
+          <h3>אין עדיין כתובות שמורות</h3>
+          <p>הוסיפו כתובת אחת או יותר כדי לקצר את התשלום בפעם הבאה.</p>
+        </div>
+      ) : (
+        <div className="addr-list">
+          {addresses.map(a => (
+            <article key={a.id} className={`addr-card${a.isDefault ? ' default' : ''}`}>
+              <div className="top">
+                <div>
+                  <div className="label">
+                    {a.label || 'כתובת'}
+                    {a.isDefault && <span className="pill">ברירת מחדל</span>}
+                  </div>
+                  <div className="name">{a.fullName} · {a.phone}</div>
+                </div>
+              </div>
+              <div className="body">
+                {a.street}
+                {a.houseNo ? ` ${a.houseNo}` : ''}
+                {a.apartment ? `, דירה ${a.apartment}` : ''}
+                <br />
+                {a.city}{a.postalCode ? ` · ${a.postalCode}` : ''}
+                {a.notes && <div className="notes">{a.notes}</div>}
+              </div>
+              <div className="actions">
+                <button type="button" onClick={() => setEditing(a)}>עריכה</button>
+                <button type="button" onClick={() => remove(a)} className="danger">מחיקה</button>
+                {!a.isDefault && (
+                  <button type="button" onClick={() => setDefault(a.id)} className="link">
+                    קביעה כברירת מחדל
+                  </button>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AddressForm({
+  initial,
+  onCancel,
+  onSaved,
+}: {
+  initial: SavedAddress | null
+  onCancel: () => void
+  onSaved: (msg: string) => void
+}) {
+  const { user } = useAuth()
+  const seeded = splitPhone(initial?.phone ?? user?.phone ?? '')
+  const [label, setLabel] = useState(initial?.label ?? '')
+  const [fullName, setFullName] = useState(initial?.fullName ?? user?.fullName ?? '')
+  const [phonePrefix, setPhonePrefix] = useState(seeded.prefix)
+  const [phoneNumber, setPhoneNumber] = useState(seeded.number)
+  const [city, setCity] = useState(initial?.city ?? '')
+  const [street, setStreet] = useState(initial?.street ?? '')
+  const [houseNo, setHouseNo] = useState(initial?.houseNo ?? '')
+  const [apartment, setApartment] = useState(initial?.apartment ?? '')
+  const [postalCode, setPostalCode] = useState(initial?.postalCode ?? '')
+  const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [isDefault, setIsDefault] = useState(initial?.isDefault ?? false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (fullName.trim().length < 2) return setError('נדרש שם מלא')
+    if (!PHONE_NUMBER_RE.test(phoneNumber)) return setError('מספר טלפון - 7 ספרות')
+    if (!city.trim()) return setError('נדרשת עיר')
+    if (!street.trim()) return setError('נדרש רחוב')
+    if (!HOUSE_NO_RE.test(houseNo)) return setError('מספר בית לא תקין')
+    if (postalCode.trim()) {
+      const d = postalCode.replace(/\D+/g, '')
+      if (!/^(\d{5}|\d{7})$/.test(d)) return setError('מיקוד 5 או 7 ספרות')
+    }
+
+    const body: SavedAddressUpsert = {
+      label: label.trim() || undefined,
+      fullName: fullName.trim(),
+      phone: phonePrefix + phoneNumber,
+      street,
+      houseNo,
+      apartment: apartment || undefined,
+      city,
+      postalCode: postalCode || undefined,
+      notes: notes || undefined,
+      isDefault,
+    }
+    setSaving(true)
+    try {
+      if (initial) {
+        await api(`/api/me/addresses/${initial.id}`, { method: 'PUT', body: JSON.stringify(body) })
+      } else {
+        await api('/api/me/addresses', { method: 'POST', body: JSON.stringify(body) })
+      }
+      onSaved(initial ? 'הכתובת עודכנה' : 'הכתובת נוספה')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="account-form">
+      <a className="back-link" onClick={onCancel}>← חזרה לרשימה</a>
+      <h2 style={{ marginTop: 8 }}>{initial ? 'עריכת כתובת' : 'כתובת חדשה'}</h2>
+
+      <Field
+        label="כינוי (אופציונלי)"
+        placeholder="בית / עבודה / כתובת של אמא"
+        value={label}
+        onChange={e => setLabel(e.target.value)}
+      />
+
+      <div className="cls-row-2">
+        <Field label="שם מלא" required value={fullName} onChange={e => setFullName(e.target.value)} />
+        <div className="hm-field">
+          <label>טלפון</label>
+          <div className="cls-phone-group">
+            <select
+              className="hm-input mono"
+              value={phonePrefix}
+              onChange={e => setPhonePrefix(e.target.value)}
+              aria-label="קידומת"
+            >
+              {PHONE_PREFIXES.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <input
+              className="hm-input mono"
+              type="tel"
+              inputMode="numeric"
+              placeholder="1234567"
+              maxLength={7}
+              value={phoneNumber}
+              onChange={e => setPhoneNumber(e.target.value.replace(/\D+/g, '').slice(0, 7))}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="cls-row-21">
+        <Autocomplete
+          label="עיר"
+          required
+          value={city}
+          onChange={setCity}
+          fetchSuggestions={fetchCities}
+          placeholder="לחצו לבחירה או הקלידו"
+        />
+        <Field
+          label="מיקוד" mono value={postalCode}
+          placeholder="5 או 7 ספרות"
+          inputMode="numeric"
+          onChange={e => setPostalCode(e.target.value)}
+        />
+      </div>
+      <div className="cls-row-3">
+        <Autocomplete
+          label="רחוב"
+          required
+          value={street}
+          onChange={setStreet}
+          fetchSuggestions={q => fetchStreets(city, q)}
+          resetKey={city}
+          disabled={!city.trim()}
+          placeholder={city.trim() ? 'לחצו לבחירה או הקלידו' : 'בחר/י עיר תחילה'}
+        />
+        <Field
+          label="מספר" required mono value={houseNo}
+          inputMode="text"
+          placeholder="10 או 10א"
+          onChange={e => setHouseNo(e.target.value)}
+        />
+        <Field label="דירה" value={apartment} onChange={e => setApartment(e.target.value)} />
+      </div>
+      <Field
+        label="הערות לשליח (אופציונלי)"
+        multiline
+        rows={2}
+        value={notes}
+        onChange={e => setNotes(e.target.value)}
+      />
+
+      <label className="default-toggle">
+        <input
+          type="checkbox"
+          checked={isDefault}
+          onChange={e => setIsDefault(e.target.checked)}
+        />
+        <span>הגדר כברירת מחדל</span>
+      </label>
+
+      {error && <div className="hm-error" style={{ marginTop: 12 }}>{error}</div>}
+
+      <div className="actions">
+        <button type="button" className="hm-btn-quiet" onClick={onCancel}>ביטול</button>
+        <button type="submit" className="hm-btn-primary" disabled={saving}>
+          {saving ? 'שומר…' : 'שמירה'}
+        </button>
+      </div>
+    </form>
+  )
+}

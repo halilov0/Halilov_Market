@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, Fragment } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { api, formatPrice, type CouponValidateResponse, type CreateOrderRequest, type OrderView } from '../api'
+import { api, formatPrice, type CouponValidateResponse, type CreateOrderRequest, type OrderView, type SavedAddress } from '../api'
 import { useCart } from '../cart/cartStore'
 import { useAuth } from '../auth/authStore'
 import { Field } from '../components/Field'
@@ -65,6 +65,38 @@ export function CheckoutPage() {
   // Loaded lookup sets for validation. Empty = not yet loaded (don't block submit on those).
   const [allCities, setAllCities] = useState<Set<string>>(new Set())
   const [streetsForCity, setStreetsForCity] = useState<Set<string>>(new Set())
+
+  // Saved address book — picker at top of form, falls back to manual entry.
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
+  const [selectedSavedId, setSelectedSavedId] = useState<number | 'new' | null>(null)
+
+  function fillFromSaved(a: SavedAddress) {
+    setFullName(a.fullName)
+    const p = splitPhone(a.phone)
+    setPhonePrefix(p.prefix); setPhoneNumber(p.number)
+    setCity(a.city)
+    setStreet(a.street)
+    setHouseNo(a.houseNo ?? '')
+    setApartment(a.apartment ?? '')
+    setPostalCode(a.postalCode ?? '')
+    setNotes(a.notes ?? '')
+    setErrors({}); setTouched({})
+  }
+
+  useEffect(() => {
+    if (!user) return
+    api<SavedAddress[]>('/api/me/addresses').then(list => {
+      setSavedAddresses(list)
+      if (list.length > 0) {
+        const def = list.find(a => a.isDefault) ?? list[0]
+        setSelectedSavedId(def.id)
+        fillFromSaved(def)
+      } else {
+        setSelectedSavedId('new')
+      }
+    }).catch(() => { /* tolerate — falls back to manual entry */ })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   useEffect(() => {
     if (!user) nav('/login?next=/checkout')
@@ -267,6 +299,47 @@ export function CheckoutPage() {
               </div>
 
               <div className="cls-checkout-section-title">פרטי משלוח</div>
+
+              {savedAddresses.length > 0 && (
+                <div className="cls-saved-addrs">
+                  <div className="head">
+                    <h4>בחירת כתובת שמורה</h4>
+                    <Link to="/account?tab=addresses">ניהול כתובות</Link>
+                  </div>
+                  <div className="opts">
+                    {savedAddresses.map(a => (
+                      <button
+                        type="button"
+                        key={a.id}
+                        className={`opt${selectedSavedId === a.id ? ' selected' : ''}`}
+                        onClick={() => { setSelectedSavedId(a.id); fillFromSaved(a) }}
+                      >
+                        <div className="l">
+                          {a.label || a.city}
+                          {a.isDefault && <span className="pill">דיפולט</span>}
+                        </div>
+                        <div>{a.street}{a.houseNo ? ` ${a.houseNo}` : ''}, {a.city}</div>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className={`opt${selectedSavedId === 'new' ? ' selected' : ''}`}
+                      onClick={() => {
+                        setSelectedSavedId('new')
+                        setFullName(user?.fullName ?? '')
+                        const p = splitPhone(user?.phone ?? '')
+                        setPhonePrefix(p.prefix); setPhoneNumber(p.number)
+                        setStreet(''); setHouseNo(''); setApartment('')
+                        setCity(''); setPostalCode(''); setNotes('')
+                        setErrors({}); setTouched({})
+                      }}
+                    >
+                      <div className="l"><span className="new-mark">+</span> כתובת חדשה</div>
+                      <div>מילוי ידני של פרטי המשלוח</div>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'grid', gap: 12 }}>
                 <div className="cls-row-2">

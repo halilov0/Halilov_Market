@@ -82,6 +82,38 @@ export type Me = {
   role: 'CUSTOMER' | 'ADMIN'
 }
 
+export type SavedAddress = {
+  id: number
+  label: string | null
+  fullName: string
+  phone: string
+  street: string
+  houseNo: string | null
+  apartment: string | null
+  city: string
+  postalCode: string | null
+  notes: string | null
+  isDefault: boolean
+}
+
+export type SavedAddressUpsert = {
+  label?: string
+  fullName: string
+  phone: string
+  street: string
+  houseNo?: string
+  apartment?: string
+  city: string
+  postalCode?: string
+  notes?: string
+  isDefault: boolean
+}
+
+export type ProfileUpdate = {
+  fullName: string
+  phone?: string
+}
+
 export function formatPrice(agorot: number): string {
   return `₪${(agorot / 100).toFixed(2)}`
 }

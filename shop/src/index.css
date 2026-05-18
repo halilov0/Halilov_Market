@@ -2880,3 +2880,314 @@ select.hm-input { appearance: none; background-image: linear-gradient(45deg, tra
   object-fit: contain;
 }
 
+/* ============================================================
+   Account page (profile + address book)
+============================================================ */
+.hm-account-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+.hm-account-page .head { margin-bottom: 24px; }
+.hm-account-page .head .eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.hm-account-page .head h1 { font-size: 32px; margin-top: 6px; }
+
+.account-grid {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 10px;
+}
+.side-nav button,
+.side-nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  text-align: start;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.side-nav button:hover,
+.side-nav a:hover { background: #fff; color: var(--ink); }
+.side-nav button.active {
+  background: var(--ink);
+  color: #fff;
+}
+.side-nav button.logout {
+  color: var(--accent-deep);
+  margin-top: 6px;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding-top: 14px;
+}
+
+.account-panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-1);
+}
+.account-form h2 { font-size: 22px; margin-bottom: 6px; }
+.account-form .hint { color: var(--ink-3); margin-bottom: 20px; font-size: 13px; }
+.account-form .cls-row-2,
+.account-form .cls-row-21,
+.account-form .cls-row-3 {
+  margin-bottom: 14px;
+}
+.account-form .hm-field { margin-bottom: 14px; }
+.account-form .cls-field-hint {
+  color: var(--ink-3);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.account-form .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.account-form .hm-btn-primary {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  padding: 11px 24px;
+  border-radius: var(--r-md);
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.account-form .hm-btn-primary:disabled { opacity: .55; cursor: wait; }
+.account-form .hm-btn-quiet {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 10px 20px;
+  border-radius: var(--r-md);
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.account-form .back-link {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.account-form .back-link:hover { color: var(--accent); }
+.account-form .default-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.addr-empty {
+  background: var(--surface);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-lg);
+  padding: 50px 22px;
+  text-align: center;
+  margin-top: 18px;
+}
+.addr-empty .ico {
+  width: 50px;
+  height: 50px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.addr-empty h3 { font-size: 17px; margin-bottom: 6px; }
+.addr-empty p { color: var(--ink-3); }
+
+.addr-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+.addr-card {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 16px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color .12s, box-shadow .12s;
+}
+.addr-card:hover { box-shadow: var(--shadow-2); }
+.addr-card.default {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink) inset;
+}
+.addr-card .label {
+  font-weight: 700;
+  font-size: 14.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.addr-card .pill {
+  background: var(--ink);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+.addr-card .name {
+  color: var(--ink-3);
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+.addr-card .body {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.addr-card .notes {
+  color: var(--ink-3);
+  font-size: 12px;
+  margin-top: 6px;
+  font-style: italic;
+}
+.addr-card .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  margin-top: auto;
+}
+.addr-card .actions button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  cursor: pointer;
+  color: var(--ink-2);
+}
+.addr-card .actions button:hover { background: var(--surface-2); }
+.addr-card .actions button.danger { color: var(--accent-deep); }
+.addr-card .actions button.link {
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent);
+  font-weight: 700;
+  padding-inline: 4px;
+}
+
+@media (max-width: 760px) {
+  .account-grid { grid-template-columns: 1fr; gap: 14px; }
+  .side-nav { flex-direction: row; flex-wrap: wrap; padding: 6px; }
+  .side-nav button, .side-nav a { flex: 1 1 auto; justify-content: center; font-size: 12.5px; }
+  .side-nav button.logout { border-top: none; padding-top: 10px; margin-top: 0; }
+  .account-panel { padding: 20px; }
+}
+
+/* ============================================================
+   Checkout — saved-address picker
+============================================================ */
+.cls-saved-addrs {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+.cls-saved-addrs .head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.cls-saved-addrs .head h4 { font-size: 13px; font-weight: 700; }
+.cls-saved-addrs .head a {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+.cls-saved-addrs .opts {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 4px;
+}
+.cls-saved-addrs .opt {
+  flex: 0 0 220px;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: start;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  transition: border-color .12s, box-shadow .12s;
+}
+.cls-saved-addrs .opt:hover { border-color: var(--line-2); }
+.cls-saved-addrs .opt.selected {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink) inset;
+}
+.cls-saved-addrs .opt .l {
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 13px;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cls-saved-addrs .opt .l .pill {
+  background: var(--ink);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.cls-saved-addrs .opt .new-mark {
+  color: var(--accent);
+  font-weight: 700;
+}

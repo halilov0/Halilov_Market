@@ -65,6 +65,7 @@ export function Footer() {
 
         <div className="col">
           <h4>חשבון</h4>
+          <Link to="/account">החשבון שלי</Link>
           <Link to="/login">התחברות</Link>
           <Link to="/register">פתיחת חשבון</Link>
           <Link to="/cart">סל קניות</Link>
