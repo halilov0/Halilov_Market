@@ -10,7 +10,7 @@ export function Footer() {
           <div className="cls-logo">
             <span className="mark">ח</span>
             <span>
-              חלילוב מרקט
+              חלילוב אונליין
               <span className="sub">כל מה שצריך · במקום אחד</span>
             </span>
           </div>
@@ -83,7 +83,7 @@ export function Footer() {
       </div>
 
       <div className="cls-footer-bottom">
-        <span>© {new Date().getFullYear()} חלילוב מרקט. כל הזכויות שמורות.</span>
+        <span>© {new Date().getFullYear()} חלילוב אונליין. כל הזכויות שמורות.</span>
         <div className="pays">
           <span className="pay-chip">VISA</span>
           <span className="pay-chip">MASTERCARD</span>

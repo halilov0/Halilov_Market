@@ -1,4 +1,4 @@
-# Production stack for Halilov Market — Oracle Cloud Always Free single-VM.
+# Production stack for Halilov Online — Oracle Cloud Always Free single-VM.
 # Run from repo root:
 #   docker compose -f infra/docker-compose.prod.yml --env-file infra/.env up -d --build
 #
@@ -50,7 +50,7 @@ services:
       R2_PUBLIC_BASE_URL: ${R2_PUBLIC_BASE_URL:-}
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-log}
       EMAIL_FROM: ${EMAIL_FROM:-no-reply@halilov.local}
-      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Halilov Market}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Halilov Online}
       EMAIL_ADMIN_BCC: ${EMAIL_ADMIN_BCC:-}
       SITE_BASE_URL: ${SITE_BASE_URL:-}
       BREVO_API_KEY: ${BREVO_API_KEY:-}

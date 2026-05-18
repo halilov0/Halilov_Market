@@ -68,7 +68,7 @@ export function LoginPage() {
           <div className="hm-meta" style={{
             fontFamily: 'var(--mono)', color: 'oklch(0.7 0.04 85)',
             letterSpacing: '0.18em', textTransform: 'uppercase',
-          }}>חלילוב מרקט</div>
+          }}>חלילוב אונליין</div>
           <div style={{
             fontFamily: 'var(--serif)', fontSize: 42, lineHeight: 1.1,
             marginTop: 14, color: 'var(--paper)',

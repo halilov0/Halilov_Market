@@ -26,7 +26,7 @@ export function LoginPage() {
       <div className="cls-auth-form">
         <Link to="/" className="brand-link">
           <span className="mark">ח</span>
-          <span>חלילוב מרקט</span>
+          <span>חלילוב אונליין</span>
         </Link>
 
         <div className="eyebrow">ברוכים הבאים</div>

@@ -1,9 +1,9 @@
 #!/bin/bash
 # Bootstrap an Oracle Cloud Always Free VM (ARM Ampere A1 or x86 micro) for
-# running the Halilov Market stack. Run once on a fresh Ubuntu 22.04 or
+# running the Halilov Online stack. Run once on a fresh Ubuntu 22.04 or
 # Oracle Linux 8/9 instance, as the default user (opc on OL, ubuntu on Ubuntu).
 #
-#   curl -fsSL https://raw.githubusercontent.com/<you>/Halilov_Market/main/infra/bootstrap-vm.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/<you>/Halilov_Online/main/infra/bootstrap-vm.sh | bash
 # or
 #   scp infra/bootstrap-vm.sh user@vm:/tmp/ && ssh user@vm 'bash /tmp/bootstrap-vm.sh'
 #

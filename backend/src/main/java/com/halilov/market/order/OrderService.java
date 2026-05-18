@@ -276,6 +276,6 @@ public class OrderService {
     private String generateOrderNumber() {
         long ts = System.currentTimeMillis();
         int rand = ThreadLocalRandom.current().nextInt(1000, 9999);
-        return "HM-" + ts + "-" + rand;
+        return "HO-" + ts + "-" + rand;
     }
 }

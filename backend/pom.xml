@@ -15,7 +15,7 @@
     <artifactId>market</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>halilov-market</name>
-    <description>Halilov Market backend</description>
+    <description>Halilov Online backend</description>
 
     <properties>
         <java.version>21</java.version>

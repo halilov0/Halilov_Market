@@ -57,7 +57,7 @@ app:
   email:
     provider: ${EMAIL_PROVIDER:log}
     fromEmail: ${EMAIL_FROM:no-reply@halilov.local}
-    fromName: ${EMAIL_FROM_NAME:חלילוב מרקט}
+    fromName: ${EMAIL_FROM_NAME:חלילוב אונליין}
     adminBcc: ${EMAIL_ADMIN_BCC:}
     siteBaseUrl: ${SITE_BASE_URL:}
     brevo:

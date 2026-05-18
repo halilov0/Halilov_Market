@@ -69,7 +69,7 @@ export function Header() {
           <Link to="/" className="cls-logo" onClick={close}>
             <span className="mark">ח</span>
             <span>
-              חלילוב מרקט
+              חלילוב אונליין
               <span className="sub">כל מה שצריך · במקום אחד</span>
             </span>
           </Link>

@@ -11,7 +11,7 @@ public final class OrderEmailBuilder {
     private OrderEmailBuilder() {}
 
     public static String subject(Order order) {
-        return "אישור הזמנה " + order.getOrderNumber() + " - חלילוב מרקט";
+        return "אישור הזמנה " + order.getOrderNumber() + " - חלילוב אונליין";
     }
 
     public static String html(Order order, Address shipping, String customerName, String siteBaseUrl) {
@@ -38,7 +38,7 @@ public final class OrderEmailBuilder {
         return "<!doctype html><html dir=\"rtl\" lang=\"he\"><body style=\"margin:0;padding:0;background:#f6f6f6;font-family:Arial,sans-serif;color:#0f1014;direction:rtl;text-align:right\">"
             + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" dir=\"rtl\" style=\"background:#f6f6f6;padding:24px 0;direction:rtl\"><tr><td align=\"center\">"
             + "<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" dir=\"rtl\" style=\"max-width:600px;background:#fff;border:1px solid #eee;border-radius:8px;overflow:hidden;direction:rtl\">"
-            + "<tr><td style=\"background:#0f1014;color:#fff;padding:20px;text-align:center;direction:rtl\"><h1 style=\"margin:0;font-size:22px;direction:rtl\">חלילוב מרקט</h1></td></tr>"
+            + "<tr><td style=\"background:#0f1014;color:#fff;padding:20px;text-align:center;direction:rtl\"><h1 style=\"margin:0;font-size:22px;direction:rtl\">חלילוב אונליין</h1></td></tr>"
             + "<tr><td style=\"padding:24px;direction:rtl;text-align:right\">"
             + "<h2 style=\"margin:0 0 8px 0;font-size:20px;direction:rtl;text-align:right\">תודה על ההזמנה, " + escape(customerName) + "!</h2>"
             + "<p style=\"margin:0 0 16px 0;color:#555;direction:rtl;text-align:right\">קיבלנו את התשלום וההזמנה שלך בעיבוד.</p>"
@@ -68,7 +68,7 @@ public final class OrderEmailBuilder {
                 "<div style=\"margin-top:24px;text-align:center\">"
                 + "<a href=\"" + escape(ctaUrl) + "\" style=\"display:inline-block;background:#0f1014;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600\">לצפייה בהזמנה</a>"
                 + "</div>")
-            + "<p style=\"margin-top:24px;font-size:12px;color:#999;text-align:center\">תודה שקנית בחלילוב מרקט.</p>"
+            + "<p style=\"margin-top:24px;font-size:12px;color:#999;text-align:center\">תודה שקנית בחלילוב אונליין.</p>"
             + "</td></tr></table>"
             + "</td></tr></table></body></html>";
     }

@@ -53,12 +53,12 @@ export function InvoicePage() {
           <div className="brand">
             <span className="mark">ח</span>
             <div>
-              <div className="name">חלילוב מרקט</div>
+              <div className="name">חלילוב אונליין</div>
               <div className="sub">כל מה שצריך · במקום אחד</div>
             </div>
           </div>
           <div className="biz">
-            <div>חלילוב מרקט בע"מ</div>
+            <div>חלילוב אונליין בע"מ</div>
             <div>ע.מ. / ח.פ. בתהליך רישום</div>
             <div>support@halilov.market</div>
           </div>
@@ -127,7 +127,7 @@ export function InvoicePage() {
         </section>
 
         <footer className="ftr">
-          <div>תודה שקנית בחלילוב מרקט.</div>
+          <div>תודה שקנית בחלילוב אונליין.</div>
           <div className="fine">
             מסמך זה הופק אוטומטית ואינו דורש חתימה. בשאלות פנו ל-support@halilov.market.
           </div>
