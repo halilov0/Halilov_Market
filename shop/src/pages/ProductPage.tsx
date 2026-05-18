@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, type Product, type Category } from '../api'
 import { useCart } from '../cart/cartStore'
+import { useFavorites } from '../favorites/favoritesStore'
 import { Icon } from '../components/Icon'
 import { Footer } from '../components/Footer'
-import { comingSoon } from '../components/Toast'
+import { useToast } from '../components/Toast'
 
 function formatPriceParts(agorot: number) {
   const [s, a] = (agorot / 100).toFixed(2).split('.')
@@ -17,15 +18,23 @@ export function ProductPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [error, setError] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
+  const [activeImage, setActiveImage] = useState<string | null>(null)
   const add = useCart(s => s.add)
+  const favIds = useFavorites(s => s.ids)
+  const toggleFav = useFavorites(s => s.toggle)
+  const pushToast = useToast(s => s.push)
   const nav = useNavigate()
 
   useEffect(() => {
     if (!slug) return
     setError(null)
     setProduct(null)
+    setActiveImage(null)
     api<Product>(`/api/products/${slug}`)
-      .then(setProduct)
+      .then(p => {
+        setProduct(p)
+        setActiveImage(p.imageUrl ?? p.imageUrls?.[0] ?? null)
+      })
       .catch(e => setError(e.message))
   }, [slug])
 
@@ -40,6 +49,7 @@ export function ProductPage() {
     ? categories.find(c => c.id === product.categoryId)?.nameHe
     : undefined
 
+  const isFav = favIds.includes(product.id)
   const outOfStock = product.stockQty <= 0
   const lowStock = product.stockQty > 0 && product.stockQty < 10
   const lineTotal = product.priceAgorot * quantity
@@ -62,16 +72,38 @@ export function ProductPage() {
         </div>
 
         <div className="cls-pdp">
-          <div className="cls-pdp-gallery">
-            <div className="badges">
-              {outOfStock && <span className="badge-pill out" style={{ background: 'var(--ink-4)', color: '#fff', fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 'var(--r-xs)' }}>אזל</span>}
-              {!outOfStock && lowStock && <span className="badge-pill" style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 'var(--r-xs)' }}>מלאי אחרון</span>}
+          <div>
+            <div className="cls-pdp-gallery">
+              <div className="badges">
+                {outOfStock && <span className="badge-pill out" style={{ background: 'var(--ink-4)', color: '#fff', fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 'var(--r-xs)' }}>אזל</span>}
+                {!outOfStock && lowStock && <span className="badge-pill" style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 'var(--r-xs)' }}>מלאי אחרון</span>}
+              </div>
+              {activeImage ? (
+                <img src={activeImage} alt={product.nameHe} />
+              ) : (
+                <span className="ph">{product.sku}</span>
+              )}
             </div>
-            {product.imageUrl ? (
-              <img src={product.imageUrl} alt={product.nameHe} />
-            ) : (
-              <span className="ph">{product.sku}</span>
-            )}
+            {(() => {
+              const gallery = [product.imageUrl, ...(product.imageUrls ?? [])]
+                .filter((u): u is string => !!u)
+              if (gallery.length < 2) return null
+              return (
+                <div className="cls-pdp-thumbs">
+                  {gallery.map(url => (
+                    <button
+                      key={url}
+                      type="button"
+                      className={url === activeImage ? 'active' : ''}
+                      onClick={() => setActiveImage(url)}
+                      aria-label="צפייה בתמונה"
+                    >
+                      <img src={url} alt="" />
+                    </button>
+                  ))}
+                </div>
+              )
+            })()}
           </div>
 
           <div className="cls-pdp-info">
@@ -131,9 +163,13 @@ export function ProductPage() {
                 הוסף לסל · ₪{totalParts.shekels}.{totalParts.agorot}
               </button>
               <button
-                className="fav-cta"
-                onClick={() => comingSoon('מועדפים')}
-                aria-label="הוסף למועדפים"
+                className={`fav-cta${isFav ? ' active' : ''}`}
+                onClick={() => {
+                  const nowFav = toggleFav(product.id)
+                  pushToast(nowFav ? 'נוסף למועדפים' : 'הוסר מהמועדפים')
+                }}
+                aria-label={isFav ? 'הסר ממועדפים' : 'הוסף למועדפים'}
+                aria-pressed={isFav}
                 type="button"
               >
                 <Icon name="heart" size={18} />

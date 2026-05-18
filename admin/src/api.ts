@@ -46,9 +46,10 @@ export type CategoryUpsert = { slug: string; nameHe: string; parentId: number | 
 
 export type Product = {
   id: number; sku: string; slug: string; nameHe: string; descriptionHe: string | null
-  categoryId: number | null; priceAgorot: number; stockQty: number; imageUrl: string | null; active: boolean
+  categoryId: number | null; priceAgorot: number; stockQty: number
+  imageUrl: string | null; imageUrls: string[]; active: boolean
 }
-export type ProductUpsert = Omit<Product, 'id'>
+export type ProductUpsert = Omit<Product, 'id' | 'imageUrls'> & { imageUrls: string[] }
 
 export type OrderStatus = 'PENDING' | 'PAID' | 'FULFILLED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED'
 

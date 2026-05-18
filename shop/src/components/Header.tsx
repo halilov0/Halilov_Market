@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/authStore'
 import { useCart } from '../cart/cartStore'
+import { useFavorites } from '../favorites/favoritesStore'
 import { api, type Category } from '../api'
 import { Icon } from './Icon'
 import { comingSoon } from './Toast'
@@ -10,6 +11,7 @@ export function Header() {
   const { user, logout } = useAuth()
   const items = useCart(s => s.lines)
   const totalItems = items.reduce((s, l) => s + l.quantity, 0)
+  const favCount = useFavorites(s => s.ids.length)
   const nav = useNavigate()
   const loc = useLocation()
   const [searchParams] = useSearchParams()
@@ -44,7 +46,7 @@ export function Header() {
             משלוח לכל הארץ
           </span>
           <span className="sep" />
-          <a onClick={() => comingSoon('שירות לקוחות')}>שירות לקוחות 24/7</a>
+          <Link to="/contact">שירות לקוחות 24/7</Link>
           <span className="sep" />
           <Link to="/track">מעקב הזמנה</Link>
           <span className="sep" />
@@ -118,13 +120,14 @@ export function Header() {
                 </span>
               </Link>
             )}
-            <a className="cls-icon-btn" onClick={() => comingSoon('מועדפים')} title="מועדפים">
+            <Link to="/favorites" className="cls-icon-btn" title="מועדפים" onClick={close}>
               <Icon name="heart" size={20} />
               <span className="label">
                 <span className="top">רשימת</span>
                 <span className="bot">מועדפים</span>
               </span>
-            </a>
+              {favCount > 0 && <span className="hm-fav-pill">{favCount}</span>}
+            </Link>
             <Link
               to="/cart"
               className="cls-icon-btn"
@@ -158,7 +161,7 @@ export function Header() {
           ))}
           <a onClick={() => { comingSoon('מבצעים'); close() }}>מבצעים חמים</a>
           <a onClick={() => { comingSoon('חדש בקטלוג'); close() }}>חדש בקטלוג</a>
-          <a onClick={() => { comingSoon('מועדפים'); close() }}>מועדפים</a>
+          <Link to="/favorites" onClick={close}>מועדפים</Link>
           {user ? (
             <a onClick={() => { logout(); nav('/'); close() }} style={{ color: 'var(--accent)' }}>
               התנתקות

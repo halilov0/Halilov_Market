@@ -55,6 +55,7 @@ export type Product = {
   priceAgorot: number
   stockQty: number
   imageUrl: string | null
+  imageUrls: string[]
   active: boolean
 }
 

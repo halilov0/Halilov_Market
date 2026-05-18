@@ -133,6 +133,7 @@ public class CatalogService {
         p.setPriceAgorot(req.priceAgorot());
         p.setStockQty(req.stockQty());
         p.setImageUrl(req.imageUrl());
+        p.setImageUrls(CatalogDtos.joinUrls(req.imageUrls()));
         p.setActive(req.active());
     }
 }

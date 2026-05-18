@@ -2672,3 +2672,211 @@ select.hm-input { appearance: none; background-image: linear-gradient(45deg, tra
   }
   @page { size: A4; margin: 0; }
 }
+
+/* ============================================================
+   WhatsApp floating action button
+============================================================ */
+.hm-wa-fab {
+  position: fixed;
+  bottom: 22px;
+  inset-inline-start: 22px;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: #25d366;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.45), 0 1px 3px rgba(0, 0, 0, 0.15);
+  z-index: 9990;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.hm-wa-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.55), 0 2px 4px rgba(0, 0, 0, 0.18);
+}
+.hm-wa-fab:active { transform: translateY(0); }
+@media (max-width: 720px) {
+  .hm-wa-fab { width: 52px; height: 52px; bottom: 18px; inset-inline-start: 16px; }
+}
+
+/* ============================================================
+   Static info pages (about / shipping / returns / terms / privacy / faq / contact)
+============================================================ */
+.hm-info-page {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+.hm-info-page .eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.hm-info-page h1 {
+  font-size: 36px;
+  margin-top: 8px;
+  margin-bottom: 18px;
+  color: var(--ink);
+}
+.hm-info-page h2 {
+  font-size: 20px;
+  margin-top: 32px;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+.hm-info-page p { margin: 0 0 14px; }
+.hm-info-page ul {
+  margin: 0 0 14px;
+  padding-inline-start: 22px;
+}
+.hm-info-page li { margin-bottom: 6px; }
+.hm-info-page .info-callout {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 16px 18px;
+  margin: 18px 0;
+}
+.hm-info-page .info-callout strong { color: var(--ink); }
+.hm-info-page details {
+  border-bottom: 1px solid var(--line);
+  padding: 14px 0;
+}
+.hm-info-page details summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 15px;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.hm-info-page details summary::after {
+  content: '+';
+  font-family: var(--mono);
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 400;
+}
+.hm-info-page details[open] summary::after { content: '−'; }
+.hm-info-page details p { margin-top: 10px; }
+
+/* ============================================================
+   Wishlist (מועדפים) — header heart pill + page grid
+============================================================ */
+.hm-fav-pill {
+  position: absolute;
+  top: -4px;
+  inset-inline-start: -4px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cls-icon-btn { position: relative; }
+
+.hm-fav-page {
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+.hm-fav-page .head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.hm-fav-page .head h1 { font-size: 32px; }
+.hm-fav-page .head .count { color: var(--ink-3); font-family: var(--mono); font-size: 13px; }
+.hm-fav-empty {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 60px 24px;
+  text-align: center;
+}
+.hm-fav-empty .ico {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.hm-fav-empty h2 { margin-bottom: 8px; }
+.hm-fav-empty p { color: var(--ink-3); margin-bottom: 18px; }
+.hm-fav-empty a.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ink);
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: var(--r-md);
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.fav-cta.active,
+.cls-card-fav.active,
+.cls-icon-btn.active {
+  color: var(--accent) !important;
+}
+.fav-cta.active svg path,
+.cls-card-fav.active svg path {
+  fill: var(--accent);
+}
+
+/* ============================================================
+   PDP gallery thumbs (multi-image)
+============================================================ */
+.cls-pdp-thumbs {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.cls-pdp-thumbs button {
+  width: 64px;
+  height: 64px;
+  border: 2px solid var(--line);
+  background: #fff;
+  border-radius: var(--r-sm);
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .12s;
+}
+.cls-pdp-thumbs button:hover { border-color: var(--line-2); }
+.cls-pdp-thumbs button.active {
+  border-color: var(--ink);
+}
+.cls-pdp-thumbs button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+

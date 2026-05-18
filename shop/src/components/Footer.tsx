@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { comingSoon } from './Toast'
+import { whatsappUrl } from './WhatsAppFab'
 
 export function Footer() {
   return (
@@ -30,7 +31,7 @@ export function Footer() {
                 <path d="M16 8h-2a2 2 0 0 0-2 2v12M9 13h6" />
               </svg>
             </a>
-            <a onClick={() => comingSoon('WhatsApp')} aria-label="WhatsApp">
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 21l1.7-5A8 8 0 1 1 8 19z" />
                 <path d="M9 10c.5 2 2 3.5 4 4l1-1 3 1v3a8 8 0 0 1-9-9z" />
@@ -49,17 +50,17 @@ export function Footer() {
           <Link to="/">קטלוג</Link>
           <a onClick={() => comingSoon('מבצעים חמים')}>מבצעים חמים</a>
           <a onClick={() => comingSoon('חדש בקטלוג')}>חדש בקטלוג</a>
-          <a onClick={() => comingSoon('מועדפים')}>מועדפים</a>
+          <Link to="/favorites">מועדפים</Link>
           <a onClick={() => comingSoon('מותגים')}>מותגים</a>
         </div>
 
         <div className="col">
           <h4>שירות</h4>
-          <a onClick={() => comingSoon('משלוחים')}>משלוחים</a>
-          <a onClick={() => comingSoon('החזרות')}>החזרות וזיכויים</a>
-          <a onClick={() => comingSoon('מעקב הזמנה')}>מעקב הזמנה</a>
-          <a onClick={() => comingSoon('שאלות נפוצות')}>שאלות נפוצות</a>
-          <a onClick={() => comingSoon('צור קשר')}>צור קשר</a>
+          <Link to="/shipping">משלוחים</Link>
+          <Link to="/returns">החזרות וזיכויים</Link>
+          <Link to="/track">מעקב הזמנה</Link>
+          <Link to="/faq">שאלות נפוצות</Link>
+          <Link to="/contact">צור קשר</Link>
         </div>
 
         <div className="col">
@@ -67,16 +68,16 @@ export function Footer() {
           <Link to="/login">התחברות</Link>
           <Link to="/register">פתיחת חשבון</Link>
           <Link to="/cart">סל קניות</Link>
-          <a onClick={() => comingSoon('ההזמנות שלי')}>ההזמנות שלי</a>
+          <Link to="/favorites">מועדפים</Link>
         </div>
 
         <div className="col">
           <h4>על חלילוב</h4>
-          <a onClick={() => comingSoon('עלינו')}>עלינו</a>
+          <Link to="/about">עלינו</Link>
           <a onClick={() => comingSoon('קריירה')}>קריירה</a>
           <a onClick={() => comingSoon('עיתונות')}>עיתונות</a>
-          <a onClick={() => comingSoon('תנאי שימוש')}>תנאי שימוש</a>
-          <a onClick={() => comingSoon('פרטיות')}>פרטיות</a>
+          <Link to="/terms">תנאי שימוש</Link>
+          <Link to="/privacy">פרטיות</Link>
         </div>
       </div>
 

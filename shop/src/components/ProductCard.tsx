@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom'
 import type { Product } from '../api'
 import { useCart } from '../cart/cartStore'
+import { useFavorites } from '../favorites/favoritesStore'
 import { Icon } from './Icon'
-import { comingSoon } from './Toast'
+import { useToast } from './Toast'
 
 export function ProductCard({ p, categoryName }: { p: Product; categoryName?: string }) {
   const add = useCart(s => s.add)
+  const isFav = useFavorites(s => s.ids.includes(p.id))
+  const toggleFav = useFavorites(s => s.toggle)
+  const pushToast = useToast(s => s.push)
   const outOfStock = p.stockQty <= 0
   const lowStock = p.stockQty > 0 && p.stockQty < 10
 
@@ -21,7 +25,8 @@ export function ProductCard({ p, categoryName }: { p: Product; categoryName?: st
   function onFavorite(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
-    comingSoon('מועדפים')
+    const nowFav = toggleFav(p.id)
+    pushToast(nowFav ? 'נוסף למועדפים' : 'הוסר מהמועדפים')
   }
 
   return (
@@ -37,9 +42,10 @@ export function ProductCard({ p, categoryName }: { p: Product; categoryName?: st
           {!outOfStock && lowStock && <span className="badge-pill dark">מלאי אחרון</span>}
         </div>
         <button
-          className="fav"
+          className={`fav cls-card-fav${isFav ? ' active' : ''}`}
           onClick={onFavorite}
-          aria-label="הוסף למועדפים"
+          aria-label={isFav ? 'הסר ממועדפים' : 'הוסף למועדפים'}
+          aria-pressed={isFav}
         >
           <Icon name="heart" size={14} />
         </button>

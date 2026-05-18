@@ -241,10 +241,10 @@ export function CatalogPage() {
                 <div className="eyebrow">משלוחים</div>
                 <h3>מגיע למחרת<br />עד הדלת</h3>
                 <p className="lede">הזמנה עד 22:00 — אצלכם בבית כבר במחר.</p>
-                <a className="promo-cta" onClick={() => comingSoon('מדיניות משלוחים')}>
+                <Link to="/shipping" className="promo-cta">
                   קרא עוד
                   <Icon name="arrow" size={12} stroke={2.2} />
-                </a>
+                </Link>
               </div>
               <div className="promo-art">
                 <span className="mini-tag">24H · DELIVERY</span>

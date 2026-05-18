@@ -7,7 +7,8 @@ import { comingSoon } from '../components/Toast'
 
 const emptyDraft: ProductUpsert = {
   sku: '', slug: '', nameHe: '', descriptionHe: '',
-  categoryId: null, priceAgorot: 0, stockQty: 0, imageUrl: '', active: true,
+  categoryId: null, priceAgorot: 0, stockQty: 0,
+  imageUrl: '', imageUrls: [], active: true,
 }
 
 export function ProductsPage() {
@@ -63,25 +64,33 @@ export function ProductsPage() {
       sku: p.sku, slug: p.slug, nameHe: p.nameHe,
       descriptionHe: p.descriptionHe ?? '',
       categoryId: p.categoryId, priceAgorot: p.priceAgorot, stockQty: p.stockQty,
-      imageUrl: p.imageUrl ?? '', active: p.active,
+      imageUrl: p.imageUrl ?? '', imageUrls: p.imageUrls ?? [], active: p.active,
     })
     setError(null)
   }
 
   function cancel() { setEditing(null); setCreating(false); setError(null) }
 
-  async function uploadImage(file: File) {
+  async function uploadImage(file: File, target: 'main' | 'extra' = 'main') {
     setError(null); setUploading(true)
     try {
       const form = new FormData()
       form.append('file', file)
       const res = await api<{ url: string }>('/api/admin/media/products', { method: 'POST', body: form })
-      setDraft(d => ({ ...d, imageUrl: res.url }))
+      if (target === 'main') {
+        setDraft(d => ({ ...d, imageUrl: res.url }))
+      } else {
+        setDraft(d => ({ ...d, imageUrls: [...d.imageUrls, res.url] }))
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'שגיאה בהעלאה')
     } finally {
       setUploading(false)
     }
+  }
+
+  function removeExtraImage(url: string) {
+    setDraft(d => ({ ...d, imageUrls: d.imageUrls.filter(u => u !== url) }))
   }
 
   async function save(e: React.FormEvent) {
@@ -151,7 +160,7 @@ export function ProductsPage() {
             </div>
 
             <div className="adm-card">
-              <h3 style={{ fontFamily: 'var(--serif)', fontSize: 18, marginBottom: 14 }}>תמונה</h3>
+              <h3 style={{ fontFamily: 'var(--serif)', fontSize: 18, marginBottom: 14 }}>תמונה ראשית</h3>
               <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
                 <div style={{
                   width: 160, height: 160, borderRadius: 'var(--r-md)',
@@ -172,7 +181,7 @@ export function ProductsPage() {
                     <Icon name="upload" size={14} />
                     {uploading ? 'מעלה…' : draft.imageUrl ? 'החלפת תמונה' : '+ העלאה'}
                     <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading}
-                           onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f); e.target.value = '' }}
+                           onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f, 'main'); e.target.value = '' }}
                            style={{ display: 'none' }} />
                   </label>
                   {draft.imageUrl && (
@@ -185,6 +194,45 @@ export function ProductsPage() {
                     JPG / PNG / WebP · מקסימום 10MB · מותאם אוטומטית ל-1200px
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="adm-card">
+              <h3 style={{ fontFamily: 'var(--serif)', fontSize: 18, marginBottom: 14 }}>תמונות נוספות לגלריה</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {draft.imageUrls.map(url => (
+                  <div key={url} style={{
+                    position: 'relative', width: 96, height: 96,
+                    borderRadius: 'var(--r-sm)', overflow: 'hidden',
+                    border: '1px solid var(--line)', background: 'var(--paper-2)',
+                  }}>
+                    <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    <button type="button"
+                            onClick={() => removeExtraImage(url)}
+                            aria-label="הסר תמונה"
+                            style={{
+                              position: 'absolute', top: 4, insetInlineEnd: 4,
+                              width: 22, height: 22, borderRadius: '50%',
+                              border: 'none', background: 'rgba(15,16,20,0.8)', color: '#fff',
+                              cursor: 'pointer', display: 'grid', placeItems: 'center',
+                              fontSize: 14, lineHeight: 1,
+                            }}>
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <label className="hm-btn hm-btn-quiet" style={{
+                  width: 96, height: 96, display: 'grid', placeItems: 'center',
+                  cursor: uploading ? 'wait' : 'pointer', fontSize: 12,
+                }}>
+                  {uploading ? 'מעלה…' : '+ הוסף'}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading}
+                         onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f, 'extra'); e.target.value = '' }}
+                         style={{ display: 'none' }} />
+                </label>
+              </div>
+              <div className="hm-meta" style={{ fontSize: 11.5, marginTop: 10 }}>
+                התמונות הנוספות יוצגו כתמונות ממוזערות בעמוד המוצר.
               </div>
             </div>
           </div>

@@ -35,6 +35,9 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "image_urls", columnDefinition = "text")
+    private String imageUrls;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -64,6 +67,8 @@ public class Product {
     public void setStockQty(int stockQty) { this.stockQty = stockQty; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public String getImageUrls() { return imageUrls; }
+    public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
     public Instant getCreatedAt() { return createdAt; }
