@@ -16,6 +16,29 @@ export class ApiError extends Error {
   }
 }
 
+export async function downloadFile(path: string, fallbackName: string): Promise<void> {
+  const headers = new Headers()
+  const token = getToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const res = await fetch(path, { headers })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new ApiError(text || res.statusText, res.status)
+  }
+  const blob = await res.blob()
+  const cd = res.headers.get('Content-Disposition') ?? ''
+  const match = /filename="?([^"]+)"?/i.exec(cd)
+  const name = match ? match[1] : fallbackName
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   const isFormData = init.body instanceof FormData

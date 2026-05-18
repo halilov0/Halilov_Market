@@ -47,6 +47,10 @@ public class CatalogDtos {
         boolean active
     ) {}
 
+    public record ImportRowError(int line, String sku, String message) {}
+
+    public record ImportResult(int created, int updated, int totalRows, List<ImportRowError> errors) {}
+
     static List<String> splitUrls(String raw) {
         if (raw == null || raw.isBlank()) return List.of();
         return Arrays.stream(raw.split("\\R"))

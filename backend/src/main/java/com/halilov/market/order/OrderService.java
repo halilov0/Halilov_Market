@@ -2,6 +2,7 @@ package com.halilov.market.order;
 
 import com.halilov.market.catalog.Product;
 import com.halilov.market.catalog.ProductRepository;
+import com.halilov.market.common.Csv;
 import com.halilov.market.coupon.CouponService;
 import com.halilov.market.notification.EmailMessage;
 import com.halilov.market.notification.EmailService;
@@ -155,6 +156,44 @@ public class OrderService {
                     : null))
             .toList();
     }
+
+    @Transactional(readOnly = true)
+    public String exportOrdersCsv() {
+        StringBuilder out = new StringBuilder(Csv.BOM);
+        out.append(Csv.row(
+            "orderNumber", "createdAt", "status",
+            "subtotalAgorot", "discountAgorot", "shippingAgorot", "vatAgorot", "totalAgorot",
+            "couponCode", "itemCount",
+            "customerName", "phone", "street", "houseNo", "city", "postalCode"
+        ));
+        for (Order o : orders.findAllByOrderByCreatedAtDesc()) {
+            Address a = o.getShippingAddressId() != null
+                ? addresses.findById(o.getShippingAddressId()).orElse(null)
+                : null;
+            int itemCount = o.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
+            out.append(Csv.row(
+                o.getOrderNumber(),
+                o.getCreatedAt().toString(),
+                o.getStatus().name(),
+                o.getSubtotalAgorot(),
+                o.getDiscountAgorot(),
+                o.getShippingAgorot(),
+                o.getVatAgorot(),
+                o.getTotalAgorot(),
+                o.getCouponCode() == null ? "" : o.getCouponCode(),
+                itemCount,
+                a == null ? "" : nz(a.getFullName()),
+                a == null ? "" : nz(a.getPhone()),
+                a == null ? "" : nz(a.getStreet()),
+                a == null ? "" : nz(a.getHouseNo()),
+                a == null ? "" : nz(a.getCity()),
+                a == null ? "" : nz(a.getPostalCode())
+            ));
+        }
+        return out.toString();
+    }
+
+    private static String nz(String s) { return s == null ? "" : s; }
 
     @Transactional(readOnly = true)
     public OrderDtos.OrderView adminGet(String orderNumber) {

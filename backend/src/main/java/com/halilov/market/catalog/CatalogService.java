@@ -1,5 +1,6 @@
 package com.halilov.market.catalog;
 
+import com.halilov.market.common.Csv;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -8,7 +9,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CatalogService {
@@ -135,5 +142,165 @@ public class CatalogService {
         p.setImageUrl(req.imageUrl());
         p.setImageUrls(CatalogDtos.joinUrls(req.imageUrls()));
         p.setActive(req.active());
+    }
+
+    // ---- CSV import/export ----
+
+    private static final String[] PRODUCT_CSV_HEADER = {
+        "sku", "slug", "nameHe", "descriptionHe", "categorySlug",
+        "priceAgorot", "stockQty", "imageUrl", "active"
+    };
+
+    @Transactional(readOnly = true)
+    public String exportProductsCsv() {
+        Map<Long, String> catSlugById = new HashMap<>();
+        for (Category c : categories.findAllByOrderBySortOrderAscNameHeAsc()) {
+            catSlugById.put(c.getId(), c.getSlug());
+        }
+        StringBuilder out = new StringBuilder(Csv.BOM);
+        out.append(Csv.row((Object[]) PRODUCT_CSV_HEADER));
+        for (Product p : products.findAll(Sort.by("sku"))) {
+            out.append(Csv.row(
+                p.getSku(),
+                p.getSlug(),
+                p.getNameHe(),
+                p.getDescriptionHe() == null ? "" : p.getDescriptionHe(),
+                p.getCategoryId() != null ? catSlugById.getOrDefault(p.getCategoryId(), "") : "",
+                p.getPriceAgorot(),
+                p.getStockQty(),
+                p.getImageUrl() == null ? "" : p.getImageUrl(),
+                p.isActive()
+            ));
+        }
+        return out.toString();
+    }
+
+    @Transactional
+    public CatalogDtos.ImportResult importProductsCsv(InputStream in) {
+        List<List<String>> rows;
+        try {
+            rows = Csv.read(in);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        if (rows.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "empty file");
+        }
+
+        Map<String, Integer> idx = new HashMap<>();
+        List<String> header = rows.get(0);
+        for (int i = 0; i < header.size(); i++) idx.put(header.get(i).trim(), i);
+        for (String required : new String[]{"sku", "slug", "nameHe", "priceAgorot"}) {
+            if (!idx.containsKey(required)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "missing required column: " + required);
+            }
+        }
+
+        Map<String, Long> catIdBySlug = new HashMap<>();
+        for (Category c : categories.findAllByOrderBySortOrderAscNameHeAsc()) {
+            catIdBySlug.put(c.getSlug(), c.getId());
+        }
+        Map<String, Product> productBySku = new HashMap<>();
+        Map<String, Product> productBySlug = new HashMap<>();
+        for (Product p : products.findAll()) {
+            productBySku.put(p.getSku(), p);
+            productBySlug.put(p.getSlug(), p);
+        }
+
+        int created = 0;
+        int updated = 0;
+        List<CatalogDtos.ImportRowError> errors = new ArrayList<>();
+
+        for (int r = 1; r < rows.size(); r++) {
+            List<String> row = rows.get(r);
+            int lineNo = r + 1;
+            String sku = cell(row, idx, "sku");
+            try {
+                if (sku.isEmpty()) {
+                    errors.add(new CatalogDtos.ImportRowError(lineNo, sku, "sku empty"));
+                    continue;
+                }
+                String slug = cell(row, idx, "slug");
+                String nameHe = cell(row, idx, "nameHe");
+                if (slug.isEmpty() || nameHe.isEmpty()) {
+                    errors.add(new CatalogDtos.ImportRowError(lineNo, sku, "slug/nameHe empty"));
+                    continue;
+                }
+                int priceAgorot;
+                int stockQty;
+                try {
+                    priceAgorot = Integer.parseInt(cell(row, idx, "priceAgorot"));
+                    stockQty = idx.containsKey("stockQty") && !cell(row, idx, "stockQty").isEmpty()
+                        ? Integer.parseInt(cell(row, idx, "stockQty")) : 0;
+                } catch (NumberFormatException nfe) {
+                    errors.add(new CatalogDtos.ImportRowError(lineNo, sku,
+                        "priceAgorot/stockQty must be integers"));
+                    continue;
+                }
+                if (priceAgorot < 0 || stockQty < 0) {
+                    errors.add(new CatalogDtos.ImportRowError(lineNo, sku, "negative price/stock"));
+                    continue;
+                }
+
+                Long categoryId = null;
+                String categorySlug = cell(row, idx, "categorySlug");
+                if (!categorySlug.isEmpty()) {
+                    categoryId = catIdBySlug.get(categorySlug);
+                    if (categoryId == null) {
+                        errors.add(new CatalogDtos.ImportRowError(lineNo, sku,
+                            "unknown categorySlug: " + categorySlug));
+                        continue;
+                    }
+                }
+
+                String descriptionHe = cell(row, idx, "descriptionHe");
+                String imageUrl = cell(row, idx, "imageUrl");
+                boolean active = parseBool(cell(row, idx, "active"), true);
+
+                Product existing = productBySku.get(sku);
+                Product slugOwner = productBySlug.get(slug);
+                if (slugOwner != null && existing != null && !slugOwner.getId().equals(existing.getId())) {
+                    errors.add(new CatalogDtos.ImportRowError(lineNo, sku, "slug already taken: " + slug));
+                    continue;
+                }
+                if (existing == null && slugOwner != null) {
+                    errors.add(new CatalogDtos.ImportRowError(lineNo, sku, "slug already taken: " + slug));
+                    continue;
+                }
+
+                Product p = existing != null ? existing : new Product();
+                p.setSku(sku);
+                p.setSlug(slug);
+                p.setNameHe(nameHe);
+                p.setDescriptionHe(descriptionHe.isEmpty() ? null : descriptionHe);
+                p.setCategoryId(categoryId);
+                p.setPriceAgorot(priceAgorot);
+                p.setStockQty(stockQty);
+                p.setImageUrl(imageUrl.isEmpty() ? null : imageUrl);
+                p.setActive(active);
+                Product saved = products.save(p);
+                productBySku.put(sku, saved);
+                productBySlug.put(slug, saved);
+                if (existing == null) created++; else updated++;
+            } catch (RuntimeException ex) {
+                errors.add(new CatalogDtos.ImportRowError(lineNo, sku,
+                    ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName()));
+            }
+        }
+
+        return new CatalogDtos.ImportResult(created, updated, rows.size() - 1, errors);
+    }
+
+    private static String cell(List<String> row, Map<String, Integer> idx, String col) {
+        Integer i = idx.get(col);
+        if (i == null || i >= row.size()) return "";
+        return row.get(i) == null ? "" : row.get(i).trim();
+    }
+
+    private static boolean parseBool(String s, boolean dflt) {
+        if (s == null || s.isEmpty()) return dflt;
+        String v = s.trim().toLowerCase();
+        return v.equals("true") || v.equals("1") || v.equals("yes") || v.equals("y");
     }
 }

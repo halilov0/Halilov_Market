@@ -1,8 +1,15 @@
 package com.halilov.market.catalog;
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/admin/catalog")
@@ -46,5 +53,24 @@ public class CatalogAdminController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteProduct(@PathVariable Long id) {
         catalog.deleteProduct(id);
+    }
+
+    @GetMapping(value = "/products.csv", produces = "text/csv; charset=UTF-8")
+    public ResponseEntity<String> exportProductsCsv() {
+        String csv = catalog.exportProductsCsv();
+        String filename = "products-" + LocalDate.now() + ".csv";
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+            .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+            .body(csv);
+    }
+
+    @PostMapping(value = "/products/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public CatalogDtos.ImportResult importProductsCsv(@RequestParam("file") MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "missing file");
+        }
+        return catalog.importProductsCsv(file.getInputStream());
     }
 }

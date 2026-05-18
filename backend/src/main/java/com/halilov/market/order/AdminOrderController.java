@@ -1,8 +1,12 @@
 package com.halilov.market.order;
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -31,5 +35,15 @@ public class AdminOrderController {
         @Valid @RequestBody OrderDtos.UpdateStatusRequest req
     ) {
         return orderService.adminUpdateStatus(orderNumber, req.status());
+    }
+
+    @GetMapping(value = "/export.csv", produces = "text/csv; charset=UTF-8")
+    public ResponseEntity<String> exportOrdersCsv() {
+        String csv = orderService.exportOrdersCsv();
+        String filename = "orders-" + LocalDate.now() + ".csv";
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+            .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+            .body(csv);
     }
 }

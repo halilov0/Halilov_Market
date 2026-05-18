@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, formatPrice, type DashboardMetrics, type OrderStatus } from '../api'
+import { api, downloadFile, formatPrice, type DashboardMetrics, type OrderStatus } from '../api'
 import { useAuth } from '../auth/authStore'
 import { StatusPill } from '../components/StatusPill'
 import { Icon } from '../components/Icon'
@@ -20,6 +20,18 @@ export function DashboardPage() {
   const { user } = useAuth()
   const [data, setData] = useState<DashboardMetrics | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
+
+  async function exportOrders() {
+    setExporting(true); setError(null)
+    try {
+      await downloadFile('/api/admin/orders/export.csv', 'orders.csv')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה בייצוא')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   useEffect(() => {
     api<DashboardMetrics>('/api/admin/metrics/dashboard')
@@ -42,7 +54,9 @@ export function DashboardPage() {
           <div className="sub">סקירה בזמן אמת של החנות</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="hm-btn hm-btn-quiet" onClick={() => comingSoon('ייצוא CSV')}>ייצוא CSV</button>
+          <button className="hm-btn hm-btn-quiet" onClick={exportOrders} disabled={exporting}>
+            {exporting ? 'מייצא…' : 'ייצוא הזמנות CSV'}
+          </button>
           <Link to="/products" className="hm-btn hm-btn-primary">+ מוצר חדש</Link>
         </div>
       </div>

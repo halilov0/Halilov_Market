@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { api, formatPrice, type Category, type Product, type ProductUpsert } from '../api'
+import { api, downloadFile, formatPrice, type Category, type Product, type ProductUpsert } from '../api'
 import { Field } from '../components/Field'
 import { Icon } from '../components/Icon'
-import { comingSoon } from '../components/Toast'
 
 const emptyDraft: ProductUpsert = {
   sku: '', slug: '', nameHe: '', descriptionHe: '',
@@ -23,6 +22,9 @@ export function ProductsPage() {
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [query, setQuery] = useState(urlQuery)
+  const [importing, setImporting] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [importSummary, setImportSummary] = useState<{ created: number; updated: number; totalRows: number; errors: { line: number; sku: string; message: string }[] } | null>(null)
 
   useEffect(() => { setQuery(urlQuery) }, [urlQuery])
 
@@ -107,6 +109,35 @@ export function ProductsPage() {
       setError(e instanceof Error ? e.message : 'שגיאה')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function exportProductsCsv() {
+    setExporting(true); setError(null)
+    try {
+      await downloadFile('/api/admin/catalog/products.csv', 'products.csv')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה בייצוא')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  async function importProductsCsv(file: File) {
+    setImporting(true); setError(null); setImportSummary(null)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await api<{ created: number; updated: number; totalRows: number; errors: { line: number; sku: string; message: string }[] }>(
+        '/api/admin/catalog/products/import',
+        { method: 'POST', body: form }
+      )
+      setImportSummary(res)
+      load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה בייבוא')
+    } finally {
+      setImporting(false)
     }
   }
 
@@ -291,12 +322,47 @@ export function ProductsPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="hm-btn hm-btn-quiet" onClick={() => comingSoon('ייבוא CSV')}>ייבוא CSV</button>
+          <button className="hm-btn hm-btn-quiet" onClick={exportProductsCsv} disabled={exporting}>
+            {exporting ? 'מייצא…' : 'ייצוא CSV'}
+          </button>
+          <label className="hm-btn hm-btn-quiet" style={{ cursor: importing ? 'wait' : 'pointer' }}>
+            {importing ? 'מייבא…' : 'ייבוא CSV'}
+            <input type="file" accept=".csv,text/csv" disabled={importing}
+                   onChange={e => { const f = e.target.files?.[0]; if (f) importProductsCsv(f); e.target.value = '' }}
+                   style={{ display: 'none' }} />
+          </label>
           <button className="hm-btn hm-btn-primary" onClick={startCreate}>+ מוצר חדש</button>
         </div>
       </div>
 
       {error && <div className="hm-error" style={{ marginBottom: 14 }}>{error}</div>}
+
+      {importSummary && (
+        <div className="adm-card" style={{ marginBottom: 14, borderColor: importSummary.errors.length ? 'var(--terracotta)' : 'var(--leaf)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+            <div>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                ייבוא הושלם: {importSummary.created} נוצרו, {importSummary.updated} עודכנו
+                {importSummary.errors.length > 0 && ` · ${importSummary.errors.length} שגיאות`}
+              </div>
+              <div className="hm-meta" style={{ fontSize: 12 }}>
+                סה״כ {importSummary.totalRows} שורות נקראו
+              </div>
+              {importSummary.errors.length > 0 && (
+                <ul style={{ marginTop: 10, paddingInlineStart: 18, fontSize: 12.5, color: 'var(--ink-2)' }}>
+                  {importSummary.errors.slice(0, 20).map((er, i) => (
+                    <li key={i}>שורה {er.line}{er.sku ? ` (${er.sku})` : ''}: {er.message}</li>
+                  ))}
+                  {importSummary.errors.length > 20 && <li>… ועוד {importSummary.errors.length - 20}</li>}
+                </ul>
+              )}
+            </div>
+            <button className="hm-icon-btn" onClick={() => setImportSummary(null)} aria-label="סגור">
+              <Icon name="x" size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{
