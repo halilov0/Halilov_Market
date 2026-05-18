@@ -30,10 +30,20 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = text ? (() => { try { return JSON.parse(text) } catch { return text } })() : null
 
   if (!res.ok) {
-    const msg = typeof body === 'object' && body?.message ? body.message : (body || res.statusText)
-    throw new ApiError(String(msg), res.status)
+    const msg = extractErrorMessage(body, res.statusText)
+    throw new ApiError(msg, res.status)
   }
   return body as T
+}
+
+function extractErrorMessage(body: unknown, fallback: string): string {
+  if (typeof body === 'string' && body) return body
+  if (body && typeof body === 'object') {
+    const b = body as Record<string, unknown>
+    if (typeof b.message === 'string' && b.message) return b.message
+    if (typeof b.error === 'string' && b.error) return b.error
+  }
+  return fallback || 'שגיאה'
 }
 
 // ----- types -----

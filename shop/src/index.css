@@ -3121,6 +3121,128 @@ select.hm-input { appearance: none; background-image: linear-gradient(45deg, tra
 }
 
 /* ============================================================
+   Account — order history list
+============================================================ */
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+.order-row {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 16px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow .12s;
+}
+.order-row:hover { box-shadow: var(--shadow-2); }
+.order-row .top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.order-row .num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.order-row .meta {
+  color: var(--ink-3);
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+.status-pill {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.status-pill.s-pending    { background: var(--warn-soft);   color: var(--warn);        border-color: var(--warn); }
+.status-pill.s-paid       { background: var(--accent-soft); color: var(--accent-deep); border-color: var(--accent); }
+.status-pill.s-fulfilled  { background: var(--info-soft);   color: var(--info);        border-color: var(--info); }
+.status-pill.s-shipped    { background: var(--info-soft);   color: var(--info);        border-color: var(--info); }
+.status-pill.s-delivered  { background: var(--good-soft);   color: var(--good);        border-color: var(--good); }
+.status-pill.s-cancelled  { background: var(--surface-2);   color: var(--ink-3);       border-color: var(--line-2); }
+.status-pill.s-refunded   { background: var(--surface-2);   color: var(--ink-3);       border-color: var(--line-2); }
+
+.order-row .items-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.order-row .item-chip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.order-row .item-chip .q {
+  font-family: var(--mono);
+  color: var(--ink-3);
+  margin-inline-start: 4px;
+}
+.order-row .item-chip.more {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.order-row .row-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  flex-wrap: wrap;
+}
+.order-row .total .lbl {
+  color: var(--ink-3);
+  font-size: 12px;
+  margin-inline-end: 6px;
+}
+.order-row .total .v {
+  font-size: 18px;
+  font-weight: 800;
+}
+.order-row .actions { display: flex; gap: 8px; }
+.order-row .actions a.ghost,
+.order-row .actions button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--ink-2);
+}
+.order-row .actions a.ghost:hover,
+.order-row .actions button:hover { background: var(--surface-2); }
+.order-row .actions button.primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.order-row .actions button.primary:hover { background: #000; }
+.order-row .actions button:disabled { opacity: .6; cursor: wait; }
+
+/* ============================================================
    Checkout — saved-address picker
 ============================================================ */
 .cls-saved-addrs {

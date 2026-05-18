@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { api, type SavedAddress, type SavedAddressUpsert } from '../api'
+import { api, formatPrice, type OrderView, type Product, type SavedAddress, type SavedAddressUpsert } from '../api'
 import { useAuth } from '../auth/authStore'
+import { useCart } from '../cart/cartStore'
 import { Field } from '../components/Field'
 import { Autocomplete, fetchCities, fetchStreets } from '../components/Autocomplete'
 import { Footer } from '../components/Footer'
@@ -23,13 +24,24 @@ function splitPhone(raw: string): { prefix: string; number: string } {
   return { prefix: '050', number: '' }
 }
 
-type Tab = 'profile' | 'addresses'
+type Tab = 'profile' | 'addresses' | 'orders'
+
+const STATUS_LABEL: Record<OrderView['status'], string> = {
+  PENDING:   'ממתין לתשלום',
+  PAID:      'שולם',
+  FULFILLED: 'בהכנה',
+  SHIPPED:   'במשלוח',
+  DELIVERED: 'נמסר',
+  CANCELLED: 'בוטלה',
+  REFUNDED:  'הוחזר תשלום',
+}
 
 export function AccountPage() {
   const { user, fetchMe, logout } = useAuth()
   const nav = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const tab: Tab = (searchParams.get('tab') as Tab) === 'addresses' ? 'addresses' : 'profile'
+  const raw = searchParams.get('tab')
+  const tab: Tab = raw === 'addresses' ? 'addresses' : raw === 'orders' ? 'orders' : 'profile'
 
   useEffect(() => { if (!user) nav('/login?next=/account') }, [user, nav])
   if (!user) return null
@@ -58,13 +70,16 @@ export function AccountPage() {
               <Icon name="pin" size={16} />
               כתובות שמורות
             </button>
+            <button
+              className={tab === 'orders' ? 'active' : ''}
+              onClick={() => setSearchParams({ tab: 'orders' })}
+            >
+              <Icon name="bag" size={16} />
+              ההזמנות שלי
+            </button>
             <Link to="/favorites">
               <Icon name="heart" size={16} />
               מועדפים
-            </Link>
-            <Link to="/track">
-              <Icon name="truck" size={16} />
-              מעקב הזמנה
             </Link>
             <button className="logout" onClick={() => { logout(); nav('/') }}>
               <Icon name="arrow" size={16} />
@@ -73,7 +88,9 @@ export function AccountPage() {
           </aside>
 
           <section className="account-panel">
-            {tab === 'profile' ? <ProfileTab onSaved={fetchMe} /> : <AddressesTab />}
+            {tab === 'profile' && <ProfileTab onSaved={fetchMe} />}
+            {tab === 'addresses' && <AddressesTab />}
+            {tab === 'orders' && <OrdersTab />}
           </section>
         </div>
       </div>
@@ -444,5 +461,137 @@ function AddressForm({
         </button>
       </div>
     </form>
+  )
+}
+
+function OrdersTab() {
+  const pushToast = useToast(s => s.push)
+  const addToCart = useCart(s => s.add)
+  const [orders, setOrders] = useState<OrderView[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [reordering, setReordering] = useState<string | null>(null)
+  const nav = useNavigate()
+
+  useEffect(() => {
+    api<OrderView[]>('/api/orders')
+      .then(setOrders)
+      .catch(e => setError(e instanceof Error ? e.message : 'שגיאה'))
+  }, [])
+
+  async function reorder(o: OrderView) {
+    setReordering(o.orderNumber); setError(null)
+    try {
+      const page = await api<{ content: Product[] }>('/api/products?size=500')
+      const byId = new Map(page.content.map(p => [p.id, p]))
+      let added = 0
+      let missing = 0
+      for (const it of o.items) {
+        const p = byId.get(it.productId)
+        if (!p || p.stockQty <= 0 || !p.active) { missing++; continue }
+        addToCart(p, Math.min(it.quantity, p.stockQty))
+        added++
+      }
+      if (added === 0) {
+        pushToast('המוצרים בהזמנה אינם זמינים יותר')
+      } else if (missing > 0) {
+        pushToast(`נוספו לסל ${added} מוצרים (${missing} לא זמינים)`)
+        nav('/cart')
+      } else {
+        pushToast(`נוספו לסל ${added} מוצרים`)
+        nav('/cart')
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה בהזמנה חוזרת')
+    } finally {
+      setReordering(null)
+    }
+  }
+
+  return (
+    <div className="account-form">
+      <h2>ההזמנות שלי</h2>
+      <p className="hint">היסטוריית הקניות שלך. לחצו על הזמנה לצפייה במעקב מלא או להזמין שוב את אותם המוצרים.</p>
+
+      {error && <div className="hm-error" style={{ marginTop: 12 }}>{error}</div>}
+
+      {orders === null ? (
+        <p style={{ color: 'var(--ink-3)', marginTop: 16 }}>טוען…</p>
+      ) : orders.length === 0 ? (
+        <div className="addr-empty">
+          <div className="ico"><Icon name="bag" size={22} /></div>
+          <h3>אין עדיין הזמנות</h3>
+          <p>הזמנות שתבצעו יופיעו כאן עם סטטוס עדכני.</p>
+          <Link
+            to="/"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              marginTop: 14, background: 'var(--ink)', color: '#fff',
+              padding: '10px 20px', borderRadius: 'var(--r-md)',
+              fontWeight: 700, fontSize: 13.5,
+            }}
+          >
+            לקטלוג
+            <Icon name="arrow" size={14} stroke={2.2} />
+          </Link>
+        </div>
+      ) : (
+        <div className="orders-list">
+          {orders.map(o => <OrderRow
+            key={o.orderNumber} o={o}
+            onReorder={() => reorder(o)}
+            reordering={reordering === o.orderNumber}
+          />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function OrderRow({ o, onReorder, reordering }: {
+  o: OrderView
+  onReorder: () => void
+  reordering: boolean
+}) {
+  const itemCount = useMemo(() => o.items.reduce((s, i) => s + i.quantity, 0), [o.items])
+  const date = new Date(o.createdAt)
+  const dateStr = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
+  const canReorder = o.status !== 'PENDING' && o.items.length > 0
+
+  return (
+    <article className={`order-row status-${o.status.toLowerCase()}`}>
+      <div className="top">
+        <div>
+          <div className="num mono">{o.orderNumber}</div>
+          <div className="meta">{dateStr} · {itemCount} פריטים</div>
+        </div>
+        <span className={`status-pill s-${o.status.toLowerCase()}`}>{STATUS_LABEL[o.status]}</span>
+      </div>
+
+      <div className="items-preview">
+        {o.items.slice(0, 3).map(it => (
+          <span key={it.productId} className="item-chip">
+            {it.nameHe} <span className="q">×{it.quantity}</span>
+          </span>
+        ))}
+        {o.items.length > 3 && <span className="item-chip more">+{o.items.length - 3}</span>}
+      </div>
+
+      <div className="row-foot">
+        <div className="total">
+          <span className="lbl">סה״כ</span>
+          <span className="v mono">{formatPrice(o.totalAgorot)}</span>
+        </div>
+        <div className="actions">
+          <Link to={`/track?orderNumber=${o.orderNumber}`} className="ghost">
+            פרטים ומעקב
+          </Link>
+          {canReorder && (
+            <button type="button" onClick={onReorder} disabled={reordering} className="primary">
+              {reordering ? 'מוסיף…' : 'הזמן שוב'}
+            </button>
+          )}
+        </div>
+      </div>
+    </article>
   )
 }
