@@ -1,6 +1,7 @@
 package com.halilov.market.catalog;
 
 import com.halilov.market.common.Csv;
+import com.halilov.market.notification.StockNotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -14,18 +15,23 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class CatalogService {
 
     private final CategoryRepository categories;
     private final ProductRepository products;
+    private final StockNotificationService stockNotifications;
 
-    public CatalogService(CategoryRepository categories, ProductRepository products) {
+    public CatalogService(CategoryRepository categories, ProductRepository products,
+                          StockNotificationService stockNotifications) {
         this.categories = categories;
         this.products = products;
+        this.stockNotifications = stockNotifications;
     }
 
     public List<CatalogDtos.CategoryView> listCategories() {
@@ -112,7 +118,11 @@ public class CatalogService {
         if (!p.getSlug().equals(req.slug()) && products.existsBySlug(req.slug())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "slug taken");
         }
+        int oldStock = p.getStockQty();
         applyProduct(p, req);
+        if (oldStock <= 0 && p.getStockQty() > 0 && p.isActive()) {
+            stockNotifications.notifyRestocked(p.getId());
+        }
         return CatalogDtos.ProductView.from(p);
     }
 
@@ -211,6 +221,7 @@ public class CatalogService {
         int created = 0;
         int updated = 0;
         List<CatalogDtos.ImportRowError> errors = new ArrayList<>();
+        Set<Long> restockedProductIds = new HashSet<>();
 
         for (int r = 1; r < rows.size(); r++) {
             List<String> row = rows.get(r);
@@ -270,6 +281,7 @@ public class CatalogService {
                 }
 
                 Product p = existing != null ? existing : new Product();
+                int oldStock = existing != null ? existing.getStockQty() : 0;
                 p.setSku(sku);
                 p.setSlug(slug);
                 p.setNameHe(nameHe);
@@ -282,11 +294,22 @@ public class CatalogService {
                 Product saved = products.save(p);
                 productBySku.put(sku, saved);
                 productBySlug.put(slug, saved);
-                if (existing == null) created++; else updated++;
+                if (existing == null) {
+                    created++;
+                } else {
+                    updated++;
+                    if (oldStock <= 0 && saved.getStockQty() > 0 && saved.isActive()) {
+                        restockedProductIds.add(saved.getId());
+                    }
+                }
             } catch (RuntimeException ex) {
                 errors.add(new CatalogDtos.ImportRowError(lineNo, sku,
                     ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName()));
             }
+        }
+
+        for (Long pid : restockedProductIds) {
+            stockNotifications.notifyRestocked(pid);
         }
 
         return new CatalogDtos.ImportResult(created, updated, rows.size() - 1, errors);

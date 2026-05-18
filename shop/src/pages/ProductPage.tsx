@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, type Product, type Category } from '../api'
 import { useCart } from '../cart/cartStore'
@@ -10,6 +10,79 @@ import { useToast } from '../components/Toast'
 function formatPriceParts(agorot: number) {
   const [s, a] = (agorot / 100).toFixed(2).split('.')
   return { shekels: s, agorot: a }
+}
+
+function NotifyWhenInStock({
+  productId, isFav, onToggleFav,
+}: { productId: number; isFav: boolean; onToggleFav: () => void }) {
+  const [email, setEmail] = useState('')
+  const [state, setState] = useState<'idle' | 'submitting' | 'done'>('idle')
+  const [error, setError] = useState<string | null>(null)
+
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    if (state !== 'idle') return
+    const trimmed = email.trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setError('כתובת מייל לא תקינה')
+      return
+    }
+    setError(null)
+    setState('submitting')
+    try {
+      await api<void>(`/api/products/${productId}/stock-notify`, {
+        method: 'POST',
+        body: JSON.stringify({ email: trimmed }),
+      })
+      setState('done')
+    } catch (err) {
+      setState('idle')
+      setError(err instanceof Error ? err.message : 'שגיאה')
+    }
+  }
+
+  return (
+    <div className="cls-pdp-notify">
+      <div className="head">
+        <div>
+          <div className="title">המוצר אזל מהמלאי</div>
+          <div className="sub">השאירו מייל ונעדכן אתכם ברגע שיחזור.</div>
+        </div>
+        <button
+          type="button"
+          className={`fav-cta${isFav ? ' active' : ''}`}
+          onClick={onToggleFav}
+          aria-label={isFav ? 'הסר ממועדפים' : 'הוסף למועדפים'}
+          aria-pressed={isFav}
+        >
+          <Icon name="heart" size={18} />
+        </button>
+      </div>
+      {state === 'done' ? (
+        <div className="ok">
+          <Icon name="check" size={14} stroke={2.4} />
+          נרשמת. נשלח אליך מייל כשהמוצר יחזור למלאי.
+        </div>
+      ) : (
+        <form onSubmit={submit}>
+          <input
+            type="email"
+            inputMode="email"
+            placeholder="המייל שלך"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            disabled={state === 'submitting'}
+            dir="ltr"
+            required
+          />
+          <button type="submit" disabled={state === 'submitting'}>
+            {state === 'submitting' ? 'שולח…' : 'עדכנו אותי'}
+          </button>
+        </form>
+      )}
+      {error && <div className="err">{error}</div>}
+    </div>
+  )
 }
 
 export function ProductPage() {
@@ -134,57 +207,68 @@ export function ProductPage() {
               </div>
             </div>
 
-            <div className="cls-pdp-cta-row">
-              <div className="cls-qty">
-                <button
-                  type="button"
-                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  disabled={quantity <= 1}
-                  aria-label="פחות"
-                >
-                  <Icon name="minus" size={16} stroke={2.2} />
-                </button>
-                <span className="val">{quantity}</span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity(q => Math.min(Math.min(99, product.stockQty), q + 1))}
-                  disabled={quantity >= Math.min(99, product.stockQty)}
-                  aria-label="עוד"
-                >
-                  <Icon name="plus" size={16} stroke={2.2} />
-                </button>
-              </div>
-              <button
-                className="add-cta"
-                disabled={outOfStock}
-                onClick={() => add(product, quantity)}
-              >
-                <Icon name="bag" size={16} stroke={2.2} />
-                הוסף לסל · ₪{totalParts.shekels}.{totalParts.agorot}
-              </button>
-              <button
-                className={`fav-cta${isFav ? ' active' : ''}`}
-                onClick={() => {
+            {outOfStock ? (
+              <NotifyWhenInStock
+                productId={product.id}
+                isFav={isFav}
+                onToggleFav={() => {
                   const nowFav = toggleFav(product.id)
                   pushToast(nowFav ? 'נוסף למועדפים' : 'הוסר מהמועדפים')
                 }}
-                aria-label={isFav ? 'הסר ממועדפים' : 'הוסף למועדפים'}
-                aria-pressed={isFav}
-                type="button"
-              >
-                <Icon name="heart" size={18} />
-              </button>
-            </div>
+              />
+            ) : (
+              <>
+                <div className="cls-pdp-cta-row">
+                  <div className="cls-qty">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                      disabled={quantity <= 1}
+                      aria-label="פחות"
+                    >
+                      <Icon name="minus" size={16} stroke={2.2} />
+                    </button>
+                    <span className="val">{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(q => Math.min(Math.min(99, product.stockQty), q + 1))}
+                      disabled={quantity >= Math.min(99, product.stockQty)}
+                      aria-label="עוד"
+                    >
+                      <Icon name="plus" size={16} stroke={2.2} />
+                    </button>
+                  </div>
+                  <button
+                    className="add-cta"
+                    onClick={() => add(product, quantity)}
+                  >
+                    <Icon name="bag" size={16} stroke={2.2} />
+                    הוסף לסל · ₪{totalParts.shekels}.{totalParts.agorot}
+                  </button>
+                  <button
+                    className={`fav-cta${isFav ? ' active' : ''}`}
+                    onClick={() => {
+                      const nowFav = toggleFav(product.id)
+                      pushToast(nowFav ? 'נוסף למועדפים' : 'הוסר מהמועדפים')
+                    }}
+                    aria-label={isFav ? 'הסר ממועדפים' : 'הוסף למועדפים'}
+                    aria-pressed={isFav}
+                    type="button"
+                  >
+                    <Icon name="heart" size={18} />
+                  </button>
+                </div>
 
-            <button
-              className="cls-pdp-buy-now"
-              disabled={outOfStock}
-              onClick={() => { add(product, quantity); nav('/cart') }}
-              type="button"
-            >
-              קנייה מהירה
-              <Icon name="arrow" size={14} stroke={2.2} />
-            </button>
+                <button
+                  className="cls-pdp-buy-now"
+                  onClick={() => { add(product, quantity); nav('/cart') }}
+                  type="button"
+                >
+                  קנייה מהירה
+                  <Icon name="arrow" size={14} stroke={2.2} />
+                </button>
+              </>
+            )}
 
             <div className="cls-pdp-trust">
               {([

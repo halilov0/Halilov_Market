@@ -1278,6 +1278,89 @@ input, textarea, select { font-family: inherit; }
 }
 .cls-pdp-buy-now:hover:not(:disabled) { background: var(--surface); border-color: var(--ink); }
 
+.cls-pdp-notify {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 18px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cls-pdp-notify .head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cls-pdp-notify .title {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.cls-pdp-notify .sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+.cls-pdp-notify .fav-cta {
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  width: 38px; height: 38px;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--ink-2);
+  transition: color .12s, border-color .12s;
+  flex-shrink: 0;
+}
+.cls-pdp-notify .fav-cta:hover,
+.cls-pdp-notify .fav-cta.active { color: var(--accent); border-color: var(--accent); }
+.cls-pdp-notify form {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.cls-pdp-notify input[type="email"] {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .12s;
+}
+.cls-pdp-notify input[type="email"]:focus { border-color: var(--ink); }
+.cls-pdp-notify input[type="email"]:disabled { background: var(--surface-2); color: var(--ink-3); }
+.cls-pdp-notify form button {
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: 0 18px;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background .12s;
+}
+.cls-pdp-notify form button:hover:not(:disabled) { background: var(--accent-deep); }
+.cls-pdp-notify form button:disabled { background: var(--surface-2); color: var(--ink-4); cursor: not-allowed; }
+.cls-pdp-notify .ok {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--good-soft);
+  color: var(--good);
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  font-weight: 600; font-size: 13px;
+}
+.cls-pdp-notify .err {
+  color: var(--accent-deep);
+  font-size: 12.5px;
+}
+
 .cls-pdp-trust {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
