@@ -77,8 +77,9 @@ export function Footer() {
           <Link to="/about">עלינו</Link>
           <a onClick={() => comingSoon('קריירה')}>קריירה</a>
           <a onClick={() => comingSoon('עיתונות')}>עיתונות</a>
-          <Link to="/terms">תנאי שימוש</Link>
-          <Link to="/privacy">פרטיות</Link>
+          <Link to="/terms">תקנון האתר</Link>
+          <Link to="/privacy">מדיניות פרטיות</Link>
+          <Link to="/accessibility">הצהרת נגישות</Link>
         </div>
       </div>
 

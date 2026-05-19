@@ -52,8 +52,9 @@ function App() {
         <Route path="/returns"  element={<InfoPage slug="returns" />} />
         <Route path="/faq"      element={<InfoPage slug="faq" />} />
         <Route path="/contact"  element={<InfoPage slug="contact" />} />
-        <Route path="/terms"    element={<InfoPage slug="terms" />} />
-        <Route path="/privacy"  element={<InfoPage slug="privacy" />} />
+        <Route path="/terms"         element={<InfoPage slug="terms" />} />
+        <Route path="/privacy"       element={<InfoPage slug="privacy" />} />
+        <Route path="/accessibility" element={<InfoPage slug="accessibility" />} />
         <Route path="/favorites" element={<FavoritesPage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="*" element={<div className="hm-page"><h1>404</h1></div>} />
