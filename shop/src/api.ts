@@ -30,20 +30,26 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = text ? (() => { try { return JSON.parse(text) } catch { return text } })() : null
 
   if (!res.ok) {
-    const msg = extractErrorMessage(body, res.statusText)
+    const msg = extractErrorMessage(body, res.status, res.statusText)
     throw new ApiError(msg, res.status)
   }
   return body as T
 }
 
-function extractErrorMessage(body: unknown, fallback: string): string {
-  if (typeof body === 'string' && body) return body
+function extractErrorMessage(body: unknown, status: number, statusText: string): string {
+  if (status === 429) return 'יותר מדי ניסיונות. נסו שוב בעוד דקה.'
+  if (status === 503) return 'השירות זמנית לא זמין. ננסה שוב בעוד רגע.'
+  if (typeof body === 'string' && body) {
+    // Reject HTML / nginx error pages — surface a generic message instead.
+    if (body.trimStart().startsWith('<')) return statusText || 'שגיאה'
+    return body
+  }
   if (body && typeof body === 'object') {
     const b = body as Record<string, unknown>
     if (typeof b.message === 'string' && b.message) return b.message
     if (typeof b.error === 'string' && b.error) return b.error
   }
-  return fallback || 'שגיאה'
+  return statusText || 'שגיאה'
 }
 
 // ----- types -----
