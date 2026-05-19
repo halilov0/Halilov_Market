@@ -42,8 +42,9 @@ aws s3 cp "${TMP}" "s3://${BACKUP_S3_BUCKET}/${KEY}" \
 rm -f "${TMP}"
 
 echo "[backup] pruning objects older than ${RETENTION_DAYS} days"
-CUTOFF=$(date -u -d "-${RETENTION_DAYS} days" +%Y%m%d 2>/dev/null \
-    || date -u -v-"${RETENTION_DAYS}"d +%Y%m%d)
+# BusyBox date has no relative-time arithmetic, so compute the cutoff via epoch.
+CUTOFF_EPOCH=$(( $(date -u +%s) - RETENTION_DAYS * 86400 ))
+CUTOFF=$(date -u -d "@${CUTOFF_EPOCH}" +%Y%m%d)
 
 aws s3 ls "s3://${BACKUP_S3_BUCKET}/${BACKUP_S3_PREFIX}/" \
     --endpoint-url "${BACKUP_S3_ENDPOINT}" \
