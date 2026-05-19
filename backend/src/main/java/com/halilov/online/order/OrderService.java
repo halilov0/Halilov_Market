@@ -28,7 +28,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
-    private static final int VAT_RATE_PERCENT = 18; // VAT 18% inclusive
+    // Halilov Online is a registered עוסק פטור — exempt from collecting VAT.
+    // Field kept on Order for historical orders predating the exemption; new orders stay 0.
 
     private final OrderRepository orders;
     private final AddressRepository addresses;
@@ -109,11 +110,10 @@ public class OrderService {
         var applied = couponService.resolveForOrder(req.couponCode(), subtotal).orElse(null);
         int discount = applied != null ? applied.discountAgorot() : 0;
         int gross = subtotal - discount + req.shippingAgorot();
-        int vat = Math.round(gross * (float) VAT_RATE_PERCENT / (100 + VAT_RATE_PERCENT));
         order.setSubtotalAgorot(subtotal);
         order.setDiscountAgorot(discount);
         if (applied != null) order.setCouponCode(applied.code());
-        order.setVatAgorot(vat);
+        order.setVatAgorot(0);
         order.setTotalAgorot(gross);
         order.setOrderNumber(generateOrderNumber());
 
