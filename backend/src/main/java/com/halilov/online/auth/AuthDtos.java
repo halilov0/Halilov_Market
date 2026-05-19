@@ -10,7 +10,8 @@ public class AuthDtos {
         @Email @NotBlank String email,
         @NotBlank @Size(min = 8, max = 100) String password,
         @NotBlank @Size(max = 255) String fullName,
-        @Size(max = 32) String phone
+        @Size(max = 32) String phone,
+        Boolean marketingOptIn
     ) {}
 
     public record LoginRequest(
@@ -20,5 +21,5 @@ public class AuthDtos {
 
     public record TokenResponse(String token, String email, String role, String fullName) {}
 
-    public record MeResponse(Long id, String email, String fullName, String phone, String role) {}
+    public record MeResponse(Long id, String email, String fullName, String phone, String role, boolean marketingOptIn) {}
 }

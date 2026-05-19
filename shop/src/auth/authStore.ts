@@ -7,7 +7,7 @@ type AuthState = {
   loading: boolean
   error: string | null
   login: (email: string, password: string) => Promise<void>
-  register: (input: { email: string; password: string; fullName: string; phone?: string }) => Promise<void>
+  register: (input: { email: string; password: string; fullName: string; phone?: string; marketingOptIn?: boolean }) => Promise<void>
   logout: () => void
   fetchMe: () => Promise<void>
 }

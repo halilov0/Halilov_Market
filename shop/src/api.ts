@@ -90,6 +90,7 @@ export type Me = {
   fullName: string
   phone: string | null
   role: 'CUSTOMER' | 'ADMIN'
+  marketingOptIn: boolean
 }
 
 export type SavedAddress = {

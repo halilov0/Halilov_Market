@@ -24,6 +24,12 @@ public class AccountController {
         accountService.updateProfile(requireEmail(auth), req);
     }
 
+    @PutMapping("/marketing-consent")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateMarketingConsent(Authentication auth, @RequestBody AccountDtos.MarketingConsentUpdate req) {
+        accountService.updateMarketingConsent(requireEmail(auth), req.optIn());
+    }
+
     @GetMapping("/addresses")
     public List<AccountDtos.AddressView> listAddresses(Authentication auth) {
         return accountService.listAddresses(requireEmail(auth));

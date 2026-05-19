@@ -106,8 +106,28 @@ function ProfileTab({ onSaved }: { onSaved: () => void | Promise<void> }) {
   const [fullName, setFullName] = useState(user?.fullName ?? '')
   const [phonePrefix, setPhonePrefix] = useState<string>(seeded.prefix)
   const [phoneNumber, setPhoneNumber] = useState<string>(seeded.number)
+  const [marketingOptIn, setMarketingOptIn] = useState(user?.marketingOptIn ?? false)
+  const [savingConsent, setSavingConsent] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  async function toggleMarketing(next: boolean) {
+    setMarketingOptIn(next)
+    setSavingConsent(true)
+    try {
+      await api('/api/me/marketing-consent', {
+        method: 'PUT',
+        body: JSON.stringify({ optIn: next }),
+      })
+      await onSaved()
+      pushToast(next ? 'נרשמת לעדכונים' : 'בוטלה הרשמה לעדכונים')
+    } catch (e) {
+      setMarketingOptIn(!next)
+      setError(e instanceof Error ? e.message : 'שגיאה')
+    } finally {
+      setSavingConsent(false)
+    }
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault()
@@ -174,6 +194,22 @@ function ProfileTab({ onSaved }: { onSaved: () => void | Promise<void> }) {
         <label>אימייל</label>
         <input className="hm-input" type="email" value={user?.email ?? ''} disabled />
         <div className="cls-field-hint">לא ניתן לשנות. צריך להחליף? פנו אלינו.</div>
+      </div>
+
+      <div className="marketing-row">
+        <div className="info">
+          <div className="t">עדכונים שיווקיים במייל</div>
+          <div className="d">מבצעים, מוצרים חדשים, קופונים. אפשר להסיר בכל עת.</div>
+        </div>
+        <label className={`hm-switch${savingConsent ? ' busy' : ''}`}>
+          <input
+            type="checkbox"
+            checked={marketingOptIn}
+            disabled={savingConsent}
+            onChange={e => toggleMarketing(e.target.checked)}
+          />
+          <span className="slider" />
+        </label>
       </div>
 
       {error && <div className="hm-error" style={{ marginTop: 12 }}>{error}</div>}

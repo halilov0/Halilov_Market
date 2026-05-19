@@ -9,6 +9,8 @@ public class AccountDtos {
         @Size(max = 32) String phone
     ) {}
 
+    public record MarketingConsentUpdate(boolean optIn) {}
+
     public record AddressView(
         Long id,
         String label,

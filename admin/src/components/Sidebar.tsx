@@ -13,9 +13,12 @@ const OPS_ITEMS: Item[] = [
   { to: '/coupons', label: 'קופונים', icon: 'percent' },
 ]
 
+const GROWTH_ITEMS: Item[] = [
+  { to: '/marketing', label: 'שיווק', icon: 'megaphone' },
+]
+
 const GROWTH_LABELS: { label: string; icon: IconName }[] = [
   { label: 'לקוחות', icon: 'users' },
-  { label: 'שיווק', icon: 'megaphone' },
   { label: 'דו"חות', icon: 'chart' },
   { label: 'הגדרות', icon: 'cog' },
 ]
@@ -45,6 +48,16 @@ export function Sidebar() {
       ))}
 
       <div className="label">צמיחה</div>
+      {GROWTH_ITEMS.map(item => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          className={({ isActive }) => `adm-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <Icon name={item.icon} size={16} />
+          <span>{item.label}</span>
+        </NavLink>
+      ))}
       {GROWTH_LABELS.map(item => (
         <a
           key={item.label}

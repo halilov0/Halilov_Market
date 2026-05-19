@@ -12,6 +12,9 @@ import com.halilov.online.user.UserRepository;
 
 import org.springframework.http.HttpStatus;
 
+import java.time.Instant;
+import java.util.UUID;
+
 @Service
 public class AuthService {
 
@@ -39,6 +42,12 @@ public class AuthService {
         user.setFullName(req.fullName().trim());
         user.setPhone(req.phone());
         user.setRole(Role.CUSTOMER);
+        boolean optIn = Boolean.TRUE.equals(req.marketingOptIn());
+        user.setMarketingOptIn(optIn);
+        if (optIn) {
+            user.setMarketingConsentAt(Instant.now());
+            user.setUnsubscribeToken(UUID.randomUUID().toString().replace("-", ""));
+        }
         userRepository.save(user);
         return toToken(user);
     }
@@ -61,7 +70,7 @@ public class AuthService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "no session"));
         return new AuthDtos.MeResponse(
             user.getId(), user.getEmail(), user.getFullName(),
-            user.getPhone(), user.getRole().name()
+            user.getPhone(), user.getRole().name(), user.isMarketingOptIn()
         );
     }
 

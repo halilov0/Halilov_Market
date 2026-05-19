@@ -9,13 +9,14 @@ export function RegisterPage() {
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const { register, loading, error } = useAuth()
   const nav = useNavigate()
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
-      await register({ email, password, fullName, phone: phone || undefined })
+      await register({ email, password, fullName, phone: phone || undefined, marketingOptIn })
       nav('/')
     } catch { /* error in store */ }
   }
@@ -48,6 +49,17 @@ export function RegisterPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
           />
+          <label className="cls-consent">
+            <input
+              type="checkbox"
+              checked={marketingOptIn}
+              onChange={e => setMarketingOptIn(e.target.checked)}
+            />
+            <span>
+              אני מאשר/ת שמירת האימייל וקבלת מבצעים ועדכונים מחלילוב אונליין.
+              ניתן להסיר בכל עת מתוך החשבון או דרך הקישור בכל מייל.
+            </span>
+          </label>
           {error && <div className="hm-error">{error}</div>}
           <button type="submit" className="submit-cta" disabled={loading}>
             {loading ? 'נרשם…' : 'יצירת חשבון'}

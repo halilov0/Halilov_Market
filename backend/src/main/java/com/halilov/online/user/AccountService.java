@@ -5,7 +5,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class AccountService {
@@ -24,6 +26,19 @@ public class AccountService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "no session"));
         u.setFullName(req.fullName().trim());
         u.setPhone(req.phone() == null || req.phone().isBlank() ? null : req.phone().trim());
+    }
+
+    @Transactional
+    public void updateMarketingConsent(String email, boolean optIn) {
+        User u = requireUser(email);
+        if (optIn == u.isMarketingOptIn()) return;
+        u.setMarketingOptIn(optIn);
+        if (optIn) {
+            u.setMarketingConsentAt(Instant.now());
+            if (u.getUnsubscribeToken() == null || u.getUnsubscribeToken().isBlank()) {
+                u.setUnsubscribeToken(UUID.randomUUID().toString().replace("-", ""));
+            }
+        }
     }
 
     @Transactional(readOnly = true)
