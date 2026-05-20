@@ -37,6 +37,17 @@ public class OrderController {
         return orderService.getMine(auth.getName(), orderNumber);
     }
 
+    @PostMapping("/{orderNumber}/cancel")
+    public OrderDtos.OrderView cancel(
+        Authentication auth,
+        @PathVariable String orderNumber,
+        @Valid @RequestBody(required = false) OrderDtos.CancelRequest req
+    ) {
+        requireAuth(auth);
+        String reason = req == null ? null : req.reason();
+        return orderService.customerCancel(auth.getName(), orderNumber, reason);
+    }
+
     private void requireAuth(Authentication auth) {
         if (auth == null || auth.getName() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "login required");

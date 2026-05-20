@@ -37,6 +37,14 @@ public class AdminOrderController {
         return orderService.adminUpdateStatus(orderNumber, req.status());
     }
 
+    @PostMapping("/{orderNumber}/refund")
+    public OrderDtos.OrderView refund(
+        @PathVariable String orderNumber,
+        @Valid @RequestBody OrderDtos.RefundRequest req
+    ) {
+        return orderService.adminRefund(orderNumber, req.amountAgorot(), req.reason(), req.restoreStock());
+    }
+
     @GetMapping(value = "/export.csv", produces = "text/csv; charset=UTF-8")
     public ResponseEntity<String> exportOrdersCsv() {
         String csv = orderService.exportOrdersCsv();

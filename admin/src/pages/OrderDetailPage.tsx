@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { api, formatPrice, ORDER_STATUSES, type OrderStatus, type OrderView } from '../api'
+import { api, formatPrice, ORDER_STATUSES, type OrderStatus, type OrderView, type RefundRequest } from '../api'
 import { StatusPill } from '../components/StatusPill'
 import { Icon } from '../components/Icon'
 import { comingSoon } from '../components/Toast'
@@ -27,6 +27,7 @@ export function OrderDetailPage() {
   const [order, setOrder] = useState<OrderView | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
+  const [refundOpen, setRefundOpen] = useState(false)
 
   function load() {
     if (!orderNumber) return
@@ -89,11 +90,56 @@ export function OrderDetailPage() {
             {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <button className="hm-btn hm-btn-quiet" onClick={() => comingSoon('הדפסת תווית')}>⎙ הדפסת תווית</button>
-          <button className="hm-btn hm-btn-quiet" onClick={() => comingSoon('החזר תשלום')}>החזר תשלום</button>
+          <button
+            className="hm-btn hm-btn-quiet"
+            onClick={() => setRefundOpen(true)}
+            disabled={!canRefund(order.status)}
+            title={canRefund(order.status) ? undefined : 'אפשר החזר רק להזמנה ששולמה'}
+          >
+            החזר תשלום
+          </button>
         </div>
       </div>
 
+      {refundOpen && (
+        <RefundModal
+          order={order}
+          onClose={() => setRefundOpen(false)}
+          onDone={(updated) => { setOrder(updated); setRefundOpen(false) }}
+        />
+      )}
+
       {error && <div className="hm-error" style={{ marginBottom: 14 }}>{error}</div>}
+
+      {(order.cancelledAt || order.refundedAt) && (
+        <div className="adm-card" style={{ marginBottom: 14, borderInlineStart: '3px solid var(--terracotta, #b04a2f)' }}>
+          <div className="hm-label" style={{ marginBottom: 8 }}>
+            {order.status === 'REFUNDED' ? 'החזר תשלום' : 'הזמנה בוטלה'}
+          </div>
+          <div style={{ display: 'grid', gap: 4, fontSize: 13 }}>
+            {order.refundedAt && (
+              <div>
+                <strong className="mono">{formatPrice(order.refundAmountAgorot ?? order.totalAgorot)}</strong>
+                {order.refundAmountAgorot != null && order.refundAmountAgorot < order.totalAgorot
+                  ? ' (החזר חלקי)' : ' (החזר מלא)'}
+                {' · '}
+                {new Date(order.refundedAt).toLocaleString('he-IL')}
+              </div>
+            )}
+            {order.cancelledAt && !order.refundedAt && (
+              <div>{new Date(order.cancelledAt).toLocaleString('he-IL')}</div>
+            )}
+            {order.cancelledBy && (
+              <div style={{ color: 'var(--ink-3)' }}>
+                בוטל על-ידי: {order.cancelledBy === 'CUSTOMER' ? 'הלקוח' : order.cancelledBy === 'ADMIN' ? 'מנהל' : 'מערכת'}
+              </div>
+            )}
+            {order.cancellationReason && (
+              <div style={{ color: 'var(--ink-2)' }}>סיבה: {order.cancellationReason}</div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* timeline */}
       <div className="adm-card" style={{ marginBottom: 14 }}>
@@ -238,6 +284,113 @@ function Row({ k, v, muted }: { k: string; v: string; muted?: boolean }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', color: muted ? 'var(--ink-3)' : 'var(--ink)', fontSize: 14 }}>
       <span>{k}</span><span className="mono">{v}</span>
+    </div>
+  )
+}
+
+function canRefund(s: OrderStatus): boolean {
+  return s === 'PAID' || s === 'FULFILLED' || s === 'SHIPPED' || s === 'DELIVERED'
+}
+
+function RefundModal({ order, onClose, onDone }: {
+  order: OrderView
+  onClose: () => void
+  onDone: (updated: OrderView) => void
+}) {
+  const [amountStr, setAmountStr] = useState((order.totalAgorot / 100).toFixed(2))
+  const [reason, setReason] = useState('')
+  const [restoreStock, setRestoreStock] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setErr(null)
+    const shek = Number(amountStr.replace(',', '.'))
+    if (!isFinite(shek) || shek <= 0) { setErr('סכום לא תקין'); return }
+    const amountAgorot = Math.round(shek * 100)
+    if (amountAgorot > order.totalAgorot) {
+      setErr('הסכום גבוה מסך ההזמנה'); return
+    }
+    const body: RefundRequest = { amountAgorot, reason: reason.trim() || undefined, restoreStock }
+    setSubmitting(true)
+    try {
+      const updated = await api<OrderView>(`/api/admin/orders/${order.orderNumber}/refund`, {
+        method: 'POST', body: JSON.stringify(body),
+      })
+      onDone(updated)
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'שגיאה')
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)',
+        display: 'grid', placeItems: 'center', zIndex: 100,
+      }}
+    >
+      <form
+        onClick={e => e.stopPropagation()}
+        onSubmit={submit}
+        style={{
+          background: 'var(--card, #fff)', borderRadius: 'var(--r-md, 8px)',
+          padding: 24, width: 'min(440px, 92vw)', boxShadow: '0 20px 60px rgba(0,0,0,.25)',
+        }}
+      >
+        <h3 style={{ marginTop: 0, fontFamily: 'var(--serif)' }}>החזר תשלום</h3>
+        <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 0 }}>
+          הזמנה {order.orderNumber} · סך {formatPrice(order.totalAgorot)}
+        </p>
+
+        <label style={{ display: 'block', marginTop: 14 }}>
+          <span className="hm-label">סכום החזר (₪)</span>
+          <input
+            className="hm-input mono"
+            type="text"
+            inputMode="decimal"
+            value={amountStr}
+            onChange={e => setAmountStr(e.target.value)}
+            style={{ marginTop: 6 }}
+            required
+          />
+        </label>
+
+        <label style={{ display: 'block', marginTop: 12 }}>
+          <span className="hm-label">סיבה (אופציונלי)</span>
+          <textarea
+            className="hm-input"
+            rows={3}
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            style={{ marginTop: 6, resize: 'vertical' }}
+            maxLength={500}
+          />
+        </label>
+
+        <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 14, fontSize: 13 }}>
+          <input
+            type="checkbox"
+            checked={restoreStock}
+            onChange={e => setRestoreStock(e.target.checked)}
+          />
+          החזרת מלאי ושחרור קופון
+        </label>
+
+        {err && <div className="hm-error" style={{ marginTop: 12 }}>{err}</div>}
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 18 }}>
+          <button type="button" className="hm-btn hm-btn-quiet" onClick={onClose} disabled={submitting}>
+            ביטול
+          </button>
+          <button type="submit" className="hm-btn hm-btn-primary" disabled={submitting}>
+            {submitting ? 'מבצע…' : 'אישור החזר'}
+          </button>
+        </div>
+      </form>
     </div>
   )
 }

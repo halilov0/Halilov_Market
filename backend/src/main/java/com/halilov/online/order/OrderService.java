@@ -251,6 +251,144 @@ public class OrderService {
         return OrderDtos.OrderView.from(order, addr);
     }
 
+    /**
+     * Customer self-cancel. Allowed before the courier picks up the parcel
+     * (PENDING / PAID / FULFILLED). After SHIPPED the customer must contact us
+     * — IL law still gives 14 days but a parcel in transit cannot be unmade.
+     */
+    @Transactional
+    public OrderDtos.OrderView customerCancel(String email, String orderNumber, String reason) {
+        User user = users.findByEmail(email)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "no user"));
+        Order order = orders.findByOrderNumber(orderNumber)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "order not found"));
+        if (!user.getId().equals(order.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "order not found");
+        }
+        OrderStatus s = order.getStatus();
+        if (s != OrderStatus.PENDING && s != OrderStatus.PAID && s != OrderStatus.FULFILLED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "ההזמנה כבר נשלחה — צרו איתנו קשר לביטול");
+        }
+        boolean wasPaid = (s == OrderStatus.PAID || s == OrderStatus.FULFILLED);
+        applyCancel(order, "CUSTOMER", reason, wasPaid);
+        Address addr = addressOf(order);
+        sendCancelEmail(order, addr, wasPaid);
+        return OrderDtos.OrderView.from(order, addr);
+    }
+
+    /**
+     * Admin issues a refund. Amount in agorot, 0 < amount <= total. If
+     * {@code restoreStock} is true (default for full refunds) stock and coupon
+     * usage are reversed. Order status flips to REFUNDED regardless of partial
+     * vs full — the amount column carries the truth.
+     */
+    @Transactional
+    public OrderDtos.OrderView adminRefund(String orderNumber, int amountAgorot, String reason, Boolean restoreStockFlag) {
+        Order order = orders.findByOrderNumber(orderNumber)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "order not found"));
+        if (amountAgorot <= 0 || amountAgorot > order.getTotalAgorot()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "amount must be 1..totalAgorot");
+        }
+        OrderStatus s = order.getStatus();
+        if (s == OrderStatus.PENDING || s == OrderStatus.CANCELLED || s == OrderStatus.REFUNDED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "cannot refund order in status " + s);
+        }
+        boolean restore = restoreStockFlag != null
+            ? restoreStockFlag
+            : (amountAgorot == order.getTotalAgorot());
+
+        if (restore) {
+            restoreStockAndCoupon(order);
+        }
+        order.setStatus(OrderStatus.REFUNDED);
+        order.setRefundedAt(java.time.Instant.now());
+        order.setRefundAmountAgorot(amountAgorot);
+        if (reason != null && !reason.isBlank()) {
+            order.setCancellationReason(reason);
+        }
+        if (order.getCancelledBy() == null) {
+            order.setCancelledBy("ADMIN");
+        }
+        Address addr = addressOf(order);
+        sendRefundEmail(order, addr, amountAgorot);
+        return OrderDtos.OrderView.from(order, addr);
+    }
+
+    private void applyCancel(Order order, String by, String reason, boolean wasPaid) {
+        if (wasPaid) {
+            restoreStockAndCoupon(order);
+            order.setRefundedAt(java.time.Instant.now());
+            order.setRefundAmountAgorot(order.getTotalAgorot());
+        }
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelledAt(java.time.Instant.now());
+        order.setCancelledBy(by);
+        order.setCancellationReason(reason);
+    }
+
+    private void restoreStockAndCoupon(Order order) {
+        for (OrderItem oi : order.getItems()) {
+            products.findById(oi.getProductId()).ifPresent(p ->
+                p.setStockQty(p.getStockQty() + oi.getQuantity()));
+        }
+        if (order.getCouponCode() != null) {
+            try {
+                couponService.decrementUsage(order.getCouponCode());
+            } catch (Exception e) {
+                log.warn("failed to reverse coupon usage for {}: {}", order.getOrderNumber(), e.toString());
+            }
+        }
+    }
+
+    private Address addressOf(Order order) {
+        return order.getShippingAddressId() != null
+            ? addresses.findById(order.getShippingAddressId()).orElse(null)
+            : null;
+    }
+
+    private void sendCancelEmail(Order order, Address addr, boolean wasPaid) {
+        try {
+            User buyer = users.findById(order.getUserId()).orElse(null);
+            if (buyer == null) return;
+            String customerName = addr != null && addr.getFullName() != null && !addr.getFullName().isBlank()
+                ? addr.getFullName() : buyer.getFullName();
+            List<String> bcc = new ArrayList<>();
+            if (adminBcc != null && !adminBcc.isBlank()) bcc.add(adminBcc.trim());
+            emailService.send(new EmailMessage(
+                buyer.getEmail(),
+                customerName,
+                OrderEmailBuilder.cancelSubject(order),
+                OrderEmailBuilder.cancelHtml(order, customerName, wasPaid, siteBaseUrl),
+                bcc
+            ));
+        } catch (Exception e) {
+            log.warn("failed to send cancel email for {}: {}", order.getOrderNumber(), e.toString());
+        }
+    }
+
+    private void sendRefundEmail(Order order, Address addr, int amountAgorot) {
+        try {
+            User buyer = users.findById(order.getUserId()).orElse(null);
+            if (buyer == null) return;
+            String customerName = addr != null && addr.getFullName() != null && !addr.getFullName().isBlank()
+                ? addr.getFullName() : buyer.getFullName();
+            List<String> bcc = new ArrayList<>();
+            if (adminBcc != null && !adminBcc.isBlank()) bcc.add(adminBcc.trim());
+            emailService.send(new EmailMessage(
+                buyer.getEmail(),
+                customerName,
+                OrderEmailBuilder.refundSubject(order),
+                OrderEmailBuilder.refundHtml(order, customerName, amountAgorot, siteBaseUrl),
+                bcc
+            ));
+        } catch (Exception e) {
+            log.warn("failed to send refund email for {}: {}", order.getOrderNumber(), e.toString());
+        }
+    }
+
     private void sendOrderPaidEmail(Order order, Address addr) {
         try {
             User buyer = users.findById(order.getUserId()).orElse(null);

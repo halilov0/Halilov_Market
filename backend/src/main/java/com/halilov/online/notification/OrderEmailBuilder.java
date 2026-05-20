@@ -73,6 +73,64 @@ public final class OrderEmailBuilder {
             + "</td></tr></table></body></html>";
     }
 
+    public static String cancelSubject(Order order) {
+        return "ביטול הזמנה " + order.getOrderNumber() + " - חלילוב אונליין";
+    }
+
+    public static String cancelHtml(Order order, String customerName, boolean wasPaid, String siteBaseUrl) {
+        String body = wasPaid
+            ? "ההזמנה שלך בוטלה. הזיכוי במלוא הסכום של "
+              + money(order.getTotalAgorot())
+              + " יזוכה לאמצעי התשלום שלך תוך 3-7 ימי עסקים."
+            : "ההזמנה שלך בוטלה לפני התשלום. לא חויבת.";
+        return statusEmail(
+            "ההזמנה בוטלה",
+            customerName,
+            body,
+            order,
+            siteBaseUrl
+        );
+    }
+
+    public static String refundSubject(Order order) {
+        return "החזר תשלום להזמנה " + order.getOrderNumber() + " - חלילוב אונליין";
+    }
+
+    public static String refundHtml(Order order, String customerName, int amountAgorot, String siteBaseUrl) {
+        boolean partial = amountAgorot < order.getTotalAgorot();
+        String body = (partial ? "בוצע החזר חלקי בסך " : "בוצע החזר מלא בסך ")
+            + money(amountAgorot)
+            + ". הסכום יזוכה לאמצעי התשלום שלך תוך 3-7 ימי עסקים.";
+        return statusEmail(
+            partial ? "החזר חלקי" : "החזר תשלום",
+            customerName,
+            body,
+            order,
+            siteBaseUrl
+        );
+    }
+
+    private static String statusEmail(String heading, String customerName, String body, Order order, String siteBaseUrl) {
+        String ctaUrl = (siteBaseUrl == null || siteBaseUrl.isBlank())
+            ? ""
+            : siteBaseUrl.trim().replaceAll("/+$", "") + "/orders/" + order.getOrderNumber();
+        return "<!doctype html><html dir=\"rtl\" lang=\"he\"><body style=\"margin:0;padding:0;background:#f6f6f6;font-family:Arial,sans-serif;color:#0f1014;direction:rtl;text-align:right\">"
+            + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" dir=\"rtl\" style=\"background:#f6f6f6;padding:24px 0;direction:rtl\"><tr><td align=\"center\">"
+            + "<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" dir=\"rtl\" style=\"max-width:600px;background:#fff;border:1px solid #eee;border-radius:8px;overflow:hidden;direction:rtl\">"
+            + "<tr><td style=\"background:#0f1014;color:#fff;padding:20px;text-align:center;direction:rtl\"><h1 style=\"margin:0;font-size:22px;direction:rtl\">חלילוב אונליין</h1></td></tr>"
+            + "<tr><td style=\"padding:24px;direction:rtl;text-align:right\">"
+            + "<h2 style=\"margin:0 0 8px 0;font-size:20px;direction:rtl;text-align:right\">" + escape(heading) + ", " + escape(customerName) + "</h2>"
+            + "<p style=\"margin:0 0 16px 0;color:#555;direction:rtl;text-align:right\">" + escape(body) + "</p>"
+            + "<p style=\"margin:0 0 16px 0;direction:rtl;text-align:right\"><strong>מספר הזמנה:</strong> <span style=\"font-family:monospace\">" + escape(order.getOrderNumber()) + "</span></p>"
+            + (ctaUrl.isEmpty() ? "" :
+                "<div style=\"margin-top:24px;text-align:center\">"
+                + "<a href=\"" + escape(ctaUrl) + "\" style=\"display:inline-block;background:#0f1014;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600\">לצפייה בהזמנה</a>"
+                + "</div>")
+            + "<p style=\"margin-top:24px;font-size:12px;color:#999;text-align:center\">לשאלות אפשר להשיב למייל הזה.</p>"
+            + "</td></tr></table>"
+            + "</td></tr></table></body></html>";
+    }
+
     private static String summaryRow(String label, String value) {
         return "<tr><td style=\"padding:6px 8px;color:#555;text-align:right\">" + escape(label) + "</td>"
             + "<td style=\"padding:6px 8px;text-align:left;font-family:monospace\">" + value + "</td></tr>";

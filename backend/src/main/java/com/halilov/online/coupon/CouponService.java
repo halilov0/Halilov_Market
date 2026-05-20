@@ -79,6 +79,15 @@ public class CouponService {
         coupons.findByCodeIgnoreCase(code).ifPresent(c -> c.setUsedCount(c.getUsedCount() + 1));
     }
 
+    /** Reverse a usage when an order is cancelled/refunded after PAID. */
+    @Transactional
+    public void decrementUsage(String code) {
+        if (code == null || code.isBlank()) return;
+        coupons.findByCodeIgnoreCase(code).ifPresent(c -> {
+            if (c.getUsedCount() > 0) c.setUsedCount(c.getUsedCount() - 1);
+        });
+    }
+
     private Coupon requireUsable(String rawCode, int subtotalAgorot) {
         Coupon c = coupons.findByCodeIgnoreCase(normalize(rawCode))
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "קוד לא תקין"));

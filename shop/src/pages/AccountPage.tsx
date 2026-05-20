@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { api, formatPrice, type OrderView, type Product, type SavedAddress, type SavedAddressUpsert } from '../api'
+import { api, canCustomerCancel, formatPrice, type OrderView, type Product, type SavedAddress, type SavedAddressUpsert } from '../api'
 import { useAuth } from '../auth/authStore'
 import { useCart } from '../cart/cartStore'
 import { Field } from '../components/Field'
@@ -506,6 +506,7 @@ function OrdersTab() {
   const [orders, setOrders] = useState<OrderView[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reordering, setReordering] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState<string | null>(null)
   const nav = useNavigate()
 
   useEffect(() => {
@@ -513,6 +514,28 @@ function OrdersTab() {
       .then(setOrders)
       .catch(e => setError(e instanceof Error ? e.message : 'שגיאה'))
   }, [])
+
+  async function cancelOrder(o: OrderView) {
+    const wasPaid = o.status === 'PAID' || o.status === 'FULFILLED'
+    const msg = wasPaid
+      ? `לבטל את הזמנה ${o.orderNumber}? יבוצע החזר מלא בסך ${formatPrice(o.totalAgorot)} תוך 3-7 ימי עסקים.`
+      : `לבטל את הזמנה ${o.orderNumber}?`
+    if (!confirm(msg)) return
+    const reason = prompt('סיבת הביטול (אופציונלי)') ?? undefined
+    setCancelling(o.orderNumber); setError(null)
+    try {
+      const updated = await api<OrderView>(`/api/orders/${o.orderNumber}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      })
+      setOrders(list => list ? list.map(x => x.orderNumber === updated.orderNumber ? updated : x) : list)
+      pushToast(wasPaid ? 'ההזמנה בוטלה — ההחזר בדרך' : 'ההזמנה בוטלה')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה בביטול')
+    } finally {
+      setCancelling(null)
+    }
+  }
 
   async function reorder(o: OrderView) {
     setReordering(o.orderNumber); setError(null)
@@ -576,6 +599,8 @@ function OrdersTab() {
             key={o.orderNumber} o={o}
             onReorder={() => reorder(o)}
             reordering={reordering === o.orderNumber}
+            onCancel={() => cancelOrder(o)}
+            cancelling={cancelling === o.orderNumber}
           />)}
         </div>
       )}
@@ -583,15 +608,18 @@ function OrdersTab() {
   )
 }
 
-function OrderRow({ o, onReorder, reordering }: {
+function OrderRow({ o, onReorder, reordering, onCancel, cancelling }: {
   o: OrderView
   onReorder: () => void
   reordering: boolean
+  onCancel: () => void
+  cancelling: boolean
 }) {
   const itemCount = useMemo(() => o.items.reduce((s, i) => s + i.quantity, 0), [o.items])
   const date = new Date(o.createdAt)
   const dateStr = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
   const canReorder = o.status !== 'PENDING' && o.items.length > 0
+  const showCancel = canCustomerCancel(o.status)
 
   return (
     <article className={`order-row status-${o.status.toLowerCase()}`}>
@@ -612,6 +640,25 @@ function OrderRow({ o, onReorder, reordering }: {
         {o.items.length > 3 && <span className="item-chip more">+{o.items.length - 3}</span>}
       </div>
 
+      {(o.refundedAt || (o.cancelledAt && o.status === 'CANCELLED')) && (
+        <div
+          style={{
+            marginTop: 10,
+            padding: '8px 12px',
+            fontSize: 12,
+            background: 'var(--paper-2, #f5f3ef)',
+            borderRadius: 'var(--r-sm, 6px)',
+            color: 'var(--ink-2, #555)',
+            lineHeight: 1.5,
+          }}
+        >
+          {o.refundedAt
+            ? `הוחזר ${formatPrice(o.refundAmountAgorot ?? o.totalAgorot)} · ${new Date(o.refundedAt).toLocaleDateString('he-IL')}`
+            : `בוטלה · ${new Date(o.cancelledAt!).toLocaleDateString('he-IL')}`}
+          {o.cancellationReason ? ` · ${o.cancellationReason}` : ''}
+        </div>
+      )}
+
       <div className="row-foot">
         <div className="total">
           <span className="lbl">סה״כ</span>
@@ -621,6 +668,17 @@ function OrderRow({ o, onReorder, reordering }: {
           <Link to={`/track?orderNumber=${o.orderNumber}`} className="ghost">
             פרטים ומעקב
           </Link>
+          {showCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={cancelling}
+              className="ghost"
+              style={{ color: 'var(--terracotta, #b04a2f)' }}
+            >
+              {cancelling ? 'מבטל…' : 'ביטול הזמנה'}
+            </button>
+          )}
           {canReorder && (
             <button type="button" onClick={onReorder} disabled={reordering} className="primary">
               {reordering ? 'מוסיף…' : 'הזמן שוב'}

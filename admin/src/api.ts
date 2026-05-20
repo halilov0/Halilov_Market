@@ -105,6 +105,15 @@ export type OrderView = {
   discountAgorot: number; couponCode: string | null
   totalAgorot: number
   items: OrderItemView[]; shipping: ShippingView | null; createdAt: string
+  cancelledAt: string | null; cancellationReason: string | null
+  cancelledBy: 'CUSTOMER' | 'ADMIN' | 'SYSTEM' | null
+  refundedAt: string | null; refundAmountAgorot: number | null
+}
+
+export type RefundRequest = {
+  amountAgorot: number
+  reason?: string
+  restoreStock?: boolean
 }
 
 export type CouponType = 'PERCENT' | 'FIXED'

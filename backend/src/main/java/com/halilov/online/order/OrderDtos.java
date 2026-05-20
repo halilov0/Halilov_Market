@@ -33,6 +33,14 @@ public class OrderDtos {
 
     public record UpdateStatusRequest(@NotNull OrderStatus status) {}
 
+    public record CancelRequest(@Size(max = 500) String reason) {}
+
+    public record RefundRequest(
+        @NotNull @Min(0) Integer amountAgorot,
+        @Size(max = 500) String reason,
+        Boolean restoreStock
+    ) {}
+
     public record OrderItemView(
         Long productId, String nameHe, String sku,
         int unitPriceAgorot, int quantity, int lineTotalAgorot
@@ -63,7 +71,9 @@ public class OrderDtos {
         int subtotalAgorot, int shippingAgorot, int vatAgorot,
         int discountAgorot, String couponCode,
         int totalAgorot,
-        List<OrderItemView> items, ShippingView shipping, Instant createdAt
+        List<OrderItemView> items, ShippingView shipping, Instant createdAt,
+        Instant cancelledAt, String cancellationReason, String cancelledBy,
+        Instant refundedAt, Integer refundAmountAgorot
     ) {
         static OrderView from(Order o, Address a) {
             return new OrderView(
@@ -72,7 +82,9 @@ public class OrderDtos {
                 o.getDiscountAgorot(), o.getCouponCode(),
                 o.getTotalAgorot(),
                 o.getItems().stream().map(OrderItemView::from).toList(),
-                ShippingView.from(a), o.getCreatedAt()
+                ShippingView.from(a), o.getCreatedAt(),
+                o.getCancelledAt(), o.getCancellationReason(), o.getCancelledBy(),
+                o.getRefundedAt(), o.getRefundAmountAgorot()
             );
         }
     }

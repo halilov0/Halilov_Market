@@ -63,6 +63,21 @@ public class Order {
     @Column(name = "paid_at")
     private Instant paidAt;
 
+    @Column(name = "cancelled_at")
+    private Instant cancelledAt;
+
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
+
+    @Column(name = "cancelled_by")
+    private String cancelledBy;
+
+    @Column(name = "refunded_at")
+    private Instant refundedAt;
+
+    @Column(name = "refund_amount_agorot")
+    private Integer refundAmountAgorot;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItem> items = new ArrayList<>();
 
@@ -105,5 +120,15 @@ public class Order {
     public Instant getUpdatedAt() { return updatedAt; }
     public Instant getPaidAt() { return paidAt; }
     public void setPaidAt(Instant paidAt) { this.paidAt = paidAt; }
+    public Instant getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(Instant cancelledAt) { this.cancelledAt = cancelledAt; }
+    public String getCancellationReason() { return cancellationReason; }
+    public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
+    public String getCancelledBy() { return cancelledBy; }
+    public void setCancelledBy(String cancelledBy) { this.cancelledBy = cancelledBy; }
+    public Instant getRefundedAt() { return refundedAt; }
+    public void setRefundedAt(Instant refundedAt) { this.refundedAt = refundedAt; }
+    public Integer getRefundAmountAgorot() { return refundAmountAgorot; }
+    public void setRefundAmountAgorot(Integer refundAmountAgorot) { this.refundAmountAgorot = refundAmountAgorot; }
     public List<OrderItem> getItems() { return items; }
 }

@@ -196,4 +196,13 @@ export type OrderView = {
   items: OrderItemView[]
   shipping: ShippingView | null
   createdAt: string
+  cancelledAt: string | null
+  cancellationReason: string | null
+  cancelledBy: 'CUSTOMER' | 'ADMIN' | 'SYSTEM' | null
+  refundedAt: string | null
+  refundAmountAgorot: number | null
+}
+
+export function canCustomerCancel(status: OrderView['status']): boolean {
+  return status === 'PENDING' || status === 'PAID' || status === 'FULFILLED'
 }
