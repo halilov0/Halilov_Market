@@ -148,11 +148,27 @@ export type ShippingRequest = {
   notes?: string
 }
 
+export type DeliveryMethod = 'COURIER' | 'PICKUP'
+
 export type CreateOrderRequest = {
   items: OrderItemRequest[]
-  shipping: ShippingRequest
-  shippingAgorot: number
+  shipping?: ShippingRequest
+  deliveryMethod: DeliveryMethod
   couponCode?: string
+}
+
+export type DeliveryOption = {
+  method: DeliveryMethod
+  label: string
+  description: string
+  priceAgorot: number
+  basePriceAgorot: number
+  freeAboveAgorot: number
+}
+
+export type DeliveryQuote = {
+  options: DeliveryOption[]
+  pickup: { address: string; hours: string; phone: string }
 }
 
 export type CouponType = 'PERCENT' | 'FIXED'
@@ -196,6 +212,7 @@ export type OrderView = {
   items: OrderItemView[]
   shipping: ShippingView | null
   createdAt: string
+  deliveryMethod: DeliveryMethod
   cancelledAt: string | null
   cancellationReason: string | null
   cancelledBy: 'CUSTOMER' | 'ADMIN' | 'SYSTEM' | null

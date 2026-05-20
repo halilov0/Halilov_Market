@@ -16,18 +16,18 @@ public class OrderDtos {
     public record ShippingRequest(
         @NotBlank @Size(max = 255) String fullName,
         @NotBlank @Size(max = 32) String phone,
-        @NotBlank @Size(max = 255) String street,
+        @Size(max = 255) String street,
         @Size(max = 32) String houseNo,
         @Size(max = 32) String apartment,
-        @NotBlank @Size(max = 128) String city,
+        @Size(max = 128) String city,
         @Size(max = 16) String postalCode,
         @Size(max = 500) String notes
     ) {}
 
     public record CreateOrderRequest(
         @NotEmpty @Size(max = 50) @Valid List<OrderItemRequest> items,
-        @Valid @NotNull ShippingRequest shipping,
-        @Min(0) int shippingAgorot,
+        @Valid ShippingRequest shipping,
+        DeliveryMethod deliveryMethod,
         @Size(max = 64) String couponCode
     ) {}
 
@@ -73,7 +73,8 @@ public class OrderDtos {
         int totalAgorot,
         List<OrderItemView> items, ShippingView shipping, Instant createdAt,
         Instant cancelledAt, String cancellationReason, String cancelledBy,
-        Instant refundedAt, Integer refundAmountAgorot
+        Instant refundedAt, Integer refundAmountAgorot,
+        DeliveryMethod deliveryMethod
     ) {
         static OrderView from(Order o, Address a) {
             return new OrderView(
@@ -84,7 +85,8 @@ public class OrderDtos {
                 o.getItems().stream().map(OrderItemView::from).toList(),
                 ShippingView.from(a), o.getCreatedAt(),
                 o.getCancelledAt(), o.getCancellationReason(), o.getCancelledBy(),
-                o.getRefundedAt(), o.getRefundAmountAgorot()
+                o.getRefundedAt(), o.getRefundAmountAgorot(),
+                o.getDeliveryMethod()
             );
         }
     }

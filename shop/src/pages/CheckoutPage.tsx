@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState, Fragment } from 'react'
+import { useEffect, useMemo, useRef, useState, Fragment } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { api, formatPrice, type CouponValidateResponse, type CreateOrderRequest, type OrderView, type SavedAddress } from '../api'
+import {
+  api, formatPrice,
+  type CouponValidateResponse, type CreateOrderRequest, type DeliveryMethod,
+  type DeliveryQuote, type OrderView, type SavedAddress,
+} from '../api'
 import { useCart } from '../cart/cartStore'
 import { useAuth } from '../auth/authStore'
 import { Field } from '../components/Field'
 import { Autocomplete, fetchCities, fetchStreets } from '../components/Autocomplete'
 import { Icon } from '../components/Icon'
 import { Footer } from '../components/Footer'
-
-const SHIPPING_AGOROT = 1990
 
 const STEPS = [
   ['1', 'משלוח'],
@@ -69,6 +71,9 @@ export function CheckoutPage() {
   // Saved address book — picker at top of form, falls back to manual entry.
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
   const [selectedSavedId, setSelectedSavedId] = useState<number | 'new' | null>(null)
+
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('COURIER')
+  const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null)
 
   function fillFromSaved(a: SavedAddress) {
     setFullName(a.fullName)
@@ -132,7 +137,22 @@ export function CheckoutPage() {
 
   const subtotal = subtotalAgorot()
   const discount = coupon ? Math.min(coupon.discountAgorot, subtotal) : 0
-  const total = subtotal - discount + SHIPPING_AGOROT
+  const discountedSubtotal = Math.max(0, subtotal - discount)
+  const shippingAgorot = useMemo(() => {
+    if (deliveryMethod === 'PICKUP') return 0
+    const opt = deliveryQuote?.options.find(o => o.method === 'COURIER')
+    if (opt) return opt.priceAgorot
+    return discountedSubtotal >= 30000 ? 0 : 1990
+  }, [deliveryMethod, deliveryQuote, discountedSubtotal])
+  const total = discountedSubtotal + shippingAgorot
+
+  useEffect(() => {
+    let cancelled = false
+    api<DeliveryQuote>(`/api/delivery/quote?subtotalAgorot=${discountedSubtotal}`)
+      .then(q => { if (!cancelled) setDeliveryQuote(q) })
+      .catch(() => { /* tolerate — falls back to client default */ })
+    return () => { cancelled = true }
+  }, [discountedSubtotal])
 
   useEffect(() => {
     if (!coupon) return
@@ -206,6 +226,12 @@ export function CheckoutPage() {
   }
 
   function validateAll(): Errors {
+    if (deliveryMethod === 'PICKUP') {
+      return {
+        fullName: validate('fullName', fullName) ?? undefined,
+        phone:    validate('phone',    phoneNumber) ?? undefined,
+      }
+    }
     return {
       fullName:   validate('fullName',   fullName)         ?? undefined,
       phone:      validate('phone',      phoneNumber)      ?? undefined,
@@ -237,17 +263,19 @@ export function CheckoutPage() {
       const fullPhone = phonePrefix + phoneNumber
       const body: CreateOrderRequest = {
         items: lines.map(l => ({ productId: l.productId, quantity: l.quantity })),
-        shipping: {
-          fullName,
-          phone: fullPhone,
-          street,
-          houseNo,
-          apartment: apartment || undefined,
-          city,
-          postalCode: postalCode || undefined,
-          notes: notes || undefined,
-        },
-        shippingAgorot: SHIPPING_AGOROT,
+        shipping: deliveryMethod === 'PICKUP'
+          ? { fullName, phone: fullPhone, street: '', city: '', notes: notes || undefined }
+          : {
+              fullName,
+              phone: fullPhone,
+              street,
+              houseNo,
+              apartment: apartment || undefined,
+              city,
+              postalCode: postalCode || undefined,
+              notes: notes || undefined,
+            },
+        deliveryMethod,
         couponCode: coupon?.code,
       }
       const order = await api<OrderView>('/api/orders', {
@@ -298,9 +326,44 @@ export function CheckoutPage() {
                 })}
               </div>
 
-              <div className="cls-checkout-section-title">פרטי משלוח</div>
+              <div className="cls-checkout-section-title">אופן קבלת ההזמנה</div>
 
-              {savedAddresses.length > 0 && (
+              <div className="cls-saved-addrs" style={{ marginBottom: 18 }}>
+                <div className="opts">
+                  <button
+                    type="button"
+                    className={`opt${deliveryMethod === 'COURIER' ? ' selected' : ''}`}
+                    onClick={() => setDeliveryMethod('COURIER')}
+                  >
+                    <div className="l">
+                      שליח עד הבית
+                      <span className="pill">
+                        {shippingForCourier(deliveryQuote) === 0
+                          ? 'חינם'
+                          : formatPrice(shippingForCourier(deliveryQuote))}
+                      </span>
+                    </div>
+                    <div>אספקה תוך 3-5 ימי עסקים{freeThresholdHint(deliveryQuote, discountedSubtotal)}</div>
+                  </button>
+                  <button
+                    type="button"
+                    className={`opt${deliveryMethod === 'PICKUP' ? ' selected' : ''}`}
+                    onClick={() => setDeliveryMethod('PICKUP')}
+                  >
+                    <div className="l">
+                      איסוף עצמי
+                      <span className="pill">חינם</span>
+                    </div>
+                    <div>{deliveryQuote?.pickup.address || 'נקודת איסוף — פרטים יישלחו במייל'}</div>
+                  </button>
+                </div>
+              </div>
+
+              <div className="cls-checkout-section-title">
+                {deliveryMethod === 'PICKUP' ? 'פרטי קשר' : 'פרטי משלוח'}
+              </div>
+
+              {deliveryMethod === 'COURIER' && savedAddresses.length > 0 && (
                 <div className="cls-saved-addrs">
                   <div className="head">
                     <h4>בחירת כתובת שמורה</h4>
@@ -379,51 +442,55 @@ export function CheckoutPage() {
                     {errors.phone && <div className="cls-field-err">{errors.phone}</div>}
                   </div>
                 </div>
-                <div className="cls-row-21">
-                  <Autocomplete
-                    label="עיר"
-                    required
-                    value={city}
-                    onChange={v => { setCity(v); patchOnChange('city', v) }}
-                    onBlur={() => markBlur('city', city)}
-                    fetchSuggestions={fetchCities}
-                    placeholder="לחצו לבחירה או הקלידו"
-                    error={errors.city}
-                  />
-                  <Field
-                    label="מיקוד" mono value={postalCode}
-                    placeholder="5 או 7 ספרות"
-                    inputMode="numeric"
-                    onChange={e => { setPostalCode(e.target.value); patchOnChange('postalCode', e.target.value) }}
-                    onBlur={() => markBlur('postalCode', postalCode)}
-                    error={errors.postalCode}
-                  />
-                </div>
-                <div className="cls-row-3">
-                  <Autocomplete
-                    label="רחוב"
-                    required
-                    value={street}
-                    onChange={v => { setStreet(v); patchOnChange('street', v) }}
-                    onBlur={() => markBlur('street', street)}
-                    fetchSuggestions={q => fetchStreets(city, q)}
-                    resetKey={city}
-                    disabled={!city.trim()}
-                    placeholder={city.trim() ? 'לחצו לבחירה או הקלידו' : 'בחר/י עיר תחילה'}
-                    error={errors.street}
-                  />
-                  <Field
-                    label="מספר" required mono value={houseNo}
-                    inputMode="text"
-                    placeholder="10 או 10א"
-                    onChange={e => { setHouseNo(e.target.value); patchOnChange('houseNo', e.target.value) }}
-                    onBlur={() => markBlur('houseNo', houseNo)}
-                    error={errors.houseNo}
-                  />
-                  <Field label="דירה" value={apartment} onChange={e => setApartment(e.target.value)} />
-                </div>
+                {deliveryMethod === 'COURIER' && (
+                  <>
+                    <div className="cls-row-21">
+                      <Autocomplete
+                        label="עיר"
+                        required
+                        value={city}
+                        onChange={v => { setCity(v); patchOnChange('city', v) }}
+                        onBlur={() => markBlur('city', city)}
+                        fetchSuggestions={fetchCities}
+                        placeholder="לחצו לבחירה או הקלידו"
+                        error={errors.city}
+                      />
+                      <Field
+                        label="מיקוד" mono value={postalCode}
+                        placeholder="5 או 7 ספרות"
+                        inputMode="numeric"
+                        onChange={e => { setPostalCode(e.target.value); patchOnChange('postalCode', e.target.value) }}
+                        onBlur={() => markBlur('postalCode', postalCode)}
+                        error={errors.postalCode}
+                      />
+                    </div>
+                    <div className="cls-row-3">
+                      <Autocomplete
+                        label="רחוב"
+                        required
+                        value={street}
+                        onChange={v => { setStreet(v); patchOnChange('street', v) }}
+                        onBlur={() => markBlur('street', street)}
+                        fetchSuggestions={q => fetchStreets(city, q)}
+                        resetKey={city}
+                        disabled={!city.trim()}
+                        placeholder={city.trim() ? 'לחצו לבחירה או הקלידו' : 'בחר/י עיר תחילה'}
+                        error={errors.street}
+                      />
+                      <Field
+                        label="מספר" required mono value={houseNo}
+                        inputMode="text"
+                        placeholder="10 או 10א"
+                        onChange={e => { setHouseNo(e.target.value); patchOnChange('houseNo', e.target.value) }}
+                        onBlur={() => markBlur('houseNo', houseNo)}
+                        error={errors.houseNo}
+                      />
+                      <Field label="דירה" value={apartment} onChange={e => setApartment(e.target.value)} />
+                    </div>
+                  </>
+                )}
                 <Field
-                  label="הערות לשליח"
+                  label={deliveryMethod === 'PICKUP' ? 'הערות (אופציונלי)' : 'הערות לשליח'}
                   multiline
                   rows={2}
                   value={notes}
@@ -431,10 +498,30 @@ export function CheckoutPage() {
                 />
               </div>
 
-              <div className="cls-info-banner">
-                <span className="ico"><Icon name="truck" size={16} /></span>
-                <div>השליח יצור איתך קשר ~30 דקות לפני הגעה.</div>
-              </div>
+              {deliveryMethod === 'COURIER' ? (
+                <div className="cls-info-banner">
+                  <span className="ico"><Icon name="truck" size={16} /></span>
+                  <div>השליח יצור איתך קשר ~30 דקות לפני הגעה.</div>
+                </div>
+              ) : (
+                <div className="cls-info-banner">
+                  <span className="ico"><Icon name="pin" size={16} /></span>
+                  <div>
+                    {deliveryQuote?.pickup.address && (
+                      <div><strong>כתובת:</strong> {deliveryQuote.pickup.address}</div>
+                    )}
+                    {deliveryQuote?.pickup.hours && (
+                      <div><strong>שעות:</strong> {deliveryQuote.pickup.hours}</div>
+                    )}
+                    {deliveryQuote?.pickup.phone && (
+                      <div><strong>טלפון:</strong> <span className="mono">{deliveryQuote.pickup.phone}</span></div>
+                    )}
+                    <div style={{ marginTop: 4, color: 'var(--ink-3)' }}>
+                      נשלח לך מייל עם פרטים מלאים ושעת איסוף כשההזמנה תוכן.
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {error && <div className="hm-error" style={{ marginTop: 14 }}>{error}</div>}
             </div>
@@ -497,8 +584,8 @@ export function CheckoutPage() {
                 </div>
               )}
               <div className="row">
-                <span>משלוח</span>
-                <span className="v">{formatPrice(SHIPPING_AGOROT)}</span>
+                <span>{deliveryMethod === 'PICKUP' ? 'איסוף עצמי' : 'משלוח'}</span>
+                <span className="v">{shippingAgorot === 0 ? 'חינם' : formatPrice(shippingAgorot)}</span>
               </div>
               <hr />
               <div className="total-row">
@@ -520,4 +607,18 @@ export function CheckoutPage() {
       <Footer />
     </>
   )
+}
+
+function shippingForCourier(q: DeliveryQuote | null): number {
+  const opt = q?.options.find(o => o.method === 'COURIER')
+  return opt ? opt.priceAgorot : 1990
+}
+
+function freeThresholdHint(q: DeliveryQuote | null, subtotalAgorot: number): string {
+  const opt = q?.options.find(o => o.method === 'COURIER')
+  if (!opt || opt.freeAboveAgorot <= 0) return ''
+  if (opt.priceAgorot === 0) return ' · משלוח חינם'
+  const left = opt.freeAboveAgorot - subtotalAgorot
+  if (left <= 0) return ' · משלוח חינם'
+  return ` · עוד ${formatPrice(left)} למשלוח חינם`
 }

@@ -24,6 +24,10 @@ public class Order {
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_method", nullable = false)
+    private DeliveryMethod deliveryMethod = DeliveryMethod.COURIER;
+
     @Column(name = "subtotal_agorot", nullable = false)
     private int subtotalAgorot;
 
@@ -96,6 +100,8 @@ public class Order {
     public void setUserId(Long userId) { this.userId = userId; }
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }
+    public DeliveryMethod getDeliveryMethod() { return deliveryMethod; }
+    public void setDeliveryMethod(DeliveryMethod deliveryMethod) { this.deliveryMethod = deliveryMethod; }
     public int getSubtotalAgorot() { return subtotalAgorot; }
     public void setSubtotalAgorot(int subtotalAgorot) { this.subtotalAgorot = subtotalAgorot; }
     public int getShippingAgorot() { return shippingAgorot; }

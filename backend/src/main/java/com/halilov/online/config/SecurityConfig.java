@@ -34,7 +34,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/ping", "/actuator/health", "/error").permitAll()
                 .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**", "/api/media/**", "/api/places/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**", "/api/media/**", "/api/places/**", "/api/delivery/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/products/*/stock-notify").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/marketing/unsubscribe").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

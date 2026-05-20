@@ -36,6 +36,7 @@ public class OrderService {
     private final ProductRepository products;
     private final UserRepository users;
     private final CouponService couponService;
+    private final DeliveryService deliveryService;
     private final EmailService emailService;
     private final String adminBcc;
     private final String siteBaseUrl;
@@ -43,6 +44,7 @@ public class OrderService {
     public OrderService(OrderRepository orders, AddressRepository addresses,
                         ProductRepository products, UserRepository users,
                         CouponService couponService,
+                        DeliveryService deliveryService,
                         EmailService emailService,
                         @Value("${app.email.adminBcc:}") String adminBcc,
                         @Value("${app.email.siteBaseUrl:}") String siteBaseUrl) {
@@ -51,6 +53,7 @@ public class OrderService {
         this.products = products;
         this.users = users;
         this.couponService = couponService;
+        this.deliveryService = deliveryService;
         this.emailService = emailService;
         this.adminBcc = adminBcc;
         this.siteBaseUrl = siteBaseUrl;
@@ -61,28 +64,42 @@ public class OrderService {
         User user = users.findByEmail(email)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "no user"));
 
+        DeliveryMethod method = req.deliveryMethod() != null ? req.deliveryMethod() : DeliveryMethod.COURIER;
+        OrderDtos.ShippingRequest ship = req.shipping();
+        if (method == DeliveryMethod.COURIER) {
+            if (ship == null
+                || ship.street() == null || ship.street().isBlank()
+                || ship.city() == null || ship.city().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "courier delivery requires shipping address");
+            }
+        }
+
         // Load all products for the items in one go
         List<Long> productIds = req.items().stream().map(OrderDtos.OrderItemRequest::productId).distinct().toList();
         Map<Long, Product> byId = new HashMap<>();
         for (Product p : products.findAllById(productIds)) byId.put(p.getId(), p);
 
-        Address addr = new Address();
-        addr.setUserId(user.getId());
-        addr.setFullName(req.shipping().fullName());
-        addr.setPhone(req.shipping().phone());
-        addr.setStreet(req.shipping().street());
-        addr.setHouseNo(req.shipping().houseNo());
-        addr.setApartment(req.shipping().apartment());
-        addr.setCity(req.shipping().city());
-        addr.setPostalCode(req.shipping().postalCode());
-        addr.setNotes(req.shipping().notes());
-        addr = addresses.save(addr);
+        Address addr = null;
+        if (ship != null && ship.fullName() != null && !ship.fullName().isBlank()) {
+            addr = new Address();
+            addr.setUserId(user.getId());
+            addr.setFullName(ship.fullName());
+            addr.setPhone(ship.phone());
+            addr.setStreet(nz(ship.street()));
+            addr.setHouseNo(ship.houseNo());
+            addr.setApartment(ship.apartment());
+            addr.setCity(nz(ship.city()));
+            addr.setPostalCode(ship.postalCode());
+            addr.setNotes(ship.notes());
+            addr = addresses.save(addr);
+        }
 
         Order order = new Order();
         order.setUserId(user.getId());
         order.setStatus(OrderStatus.PENDING);
-        order.setShippingAddressId(addr.getId());
-        order.setShippingAgorot(req.shippingAgorot());
+        order.setDeliveryMethod(method);
+        if (addr != null) order.setShippingAddressId(addr.getId());
 
         int subtotal = 0;
         for (OrderDtos.OrderItemRequest itemReq : req.items()) {
@@ -109,9 +126,12 @@ public class OrderService {
 
         var applied = couponService.resolveForOrder(req.couponCode(), subtotal).orElse(null);
         int discount = applied != null ? applied.discountAgorot() : 0;
-        int gross = subtotal - discount + req.shippingAgorot();
+        int discountedSubtotal = Math.max(0, subtotal - discount);
+        int shippingAgorot = deliveryService.priceFor(method, discountedSubtotal);
+        int gross = discountedSubtotal + shippingAgorot;
         order.setSubtotalAgorot(subtotal);
         order.setDiscountAgorot(discount);
+        order.setShippingAgorot(shippingAgorot);
         if (applied != null) order.setCouponCode(applied.code());
         order.setVatAgorot(0);
         order.setTotalAgorot(gross);
